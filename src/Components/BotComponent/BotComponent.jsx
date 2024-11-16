@@ -1,40 +1,33 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import "./BotComponent.css"; // Add your styling for wave animations
+import "./BotComponent.css";
+import Waveform from "../WaveForm/Waveform.jsx";
 
 function BotComponent() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
-  const [language, setLanguage] = useState("en-US"); // Default to English
+  const [language, setLanguage] = useState("en-US"); // Default language
 
   const controllerRef = useRef(null);
+  const recognitionRef = useRef(null);
 
-  // Web Speech API for Speech Recognition
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.lang = language;
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  // Web Speech API for Speech Synthesis
-  const speak = (text, lang = "en-US") => {
-    window.speechSynthesis.cancel(); // Stop any ongoing speech
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition API not supported in this browser.");
+      return;
+    }
 
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = lang; // Speak in the detected language
-    speech.rate = 1;
-    speech.pitch = 1;
-    window.speechSynthesis.speak(speech);
-  };
-
-  const handleStartListening = () => {
-    setListening(true);
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true; // Allow continuous listening
+    recognition.interimResults = false;
     recognition.lang = language;
 
     recognition.onresult = (event) => {
-      const userMessage = event.results[0][0].transcript;
+      const userMessage = event.results[event.results.length - 1][0].transcript;
       const userMessageObj = {
         text: userMessage,
         sender: "user",
@@ -42,8 +35,8 @@ function BotComponent() {
       };
       setMessages((prevMessages) => [...prevMessages, userMessageObj]);
 
-      recognition.stop();
-      fetchBotResponse(userMessage); // Fetch bot response
+      recognition.stop(); // Stop recognition temporarily to process response
+      fetchBotResponse(userMessage); // Fetch response from the bot
     };
 
     recognition.onerror = (event) => {
@@ -52,15 +45,21 @@ function BotComponent() {
     };
 
     recognition.onend = () => {
+      // Do not restart automatically unless explicitly started by the user
       setListening(false);
     };
 
-    recognition.start();
-  };
+    recognitionRef.current = recognition;
+  }, [language]);
 
-  const handleStopListening = () => {
-    setListening(false);
-    recognition.stop();
+  const speak = (text, lang = "en-US") => {
+    window.speechSynthesis.cancel(); // Stop ongoing speech
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
   };
 
   const fetchBotResponse = async (input) => {
@@ -68,29 +67,27 @@ function BotComponent() {
       controllerRef.current.abort();
     }
 
-    window.speechSynthesis.cancel();
-
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
 
     setLoading(true);
+
     try {
-      const response = await axios({
-        url: "https://api.openai.com/v1/chat/completions", // OpenAI GPT-4 API Endpoint
-        method: "post",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer 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`,
-        },
-        data: {
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
           model: "gpt-4",
           messages: [{ role: "user", content: input }],
         },
-        signal,
-      });
+        {
+          headers: {
+            Authorization: `Bearer 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`, // Replace with your actual GPT Premium // Replace with secure API key handling
+          },
+          signal,
+        }
+      );
 
       const botMessage = response.data.choices[0].message.content;
-
       const botMessageObj = {
         text: botMessage,
         sender: "bot",
@@ -98,43 +95,67 @@ function BotComponent() {
       };
       setMessages((prevMessages) => [...prevMessages, botMessageObj]);
 
-      // Speak in the user-specified language
       speak(botMessage, language);
     } catch (error) {
-      if (axios.isCancel(error)) {
-        console.log("Request canceled due to new input");
-      } else {
-        console.error("Error fetching data:", error);
-        const errorMessage = {
-          text: "Sorry, I couldn't retrieve the answer. Please try again.",
-          sender: "bot",
-          timestamp: new Date(),
-        };
-        setMessages((prevMessages) => [...prevMessages, errorMessage]);
-        speak(errorMessage.text, language);
-      }
+      console.error("Error fetching bot response:", error);
+      const errorMessage = {
+        text: "Sorry, I couldn't retrieve the answer. Please try again.",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      speak(errorMessage.text, language);
+    } finally {
+      setLoading(false);
+      // Do not restart listening automatically
     }
-    setLoading(false);
+  };
+
+  const handleStartListening = () => {
+    // Cancel any ongoing speech synthesis
+    window.speechSynthesis.cancel();
+
+    // Start speech recognition
+    setListening(true);
+    recognitionRef.current.lang = language;
+    recognitionRef.current.start();
+  };
+
+  const handleStopListening = () => {
+    setListening(false);
+    recognitionRef.current.stop();
   };
 
   return (
     <div className="bot-component">
       <div className="language-selector">
-        <label>Select Language: </label>
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-        >
-          <option value="en-US">English</option>
-          <option value="es-ES">Spanish</option>
-          <option value="fr-FR">French</option>
-          <option value="de-DE">German</option>
-          <option value="hi-IN">Hindi</option>
-          <option value="ar-SA">Arabic</option>
-          <option value="zh-CN">Chinese</option>
-          <option value="it-IT">Italian</option> {/* Added Italian */}
-        </select>
-      </div>
+  <div className="dynamic-text">
+    <div className="anna-repeater">
+      <h1 className="anna-title">ANNA</h1>
+
+      {/* Add more ANNA if needed */}
+    </div>
+  </div>
+  <div
+  ><h3 className="typing-effect">Select Language</h3>
+  
+  <select
+    className="language-dropdown"
+    value={language}
+    onChange={(e) => setLanguage(e.target.value)}
+  >
+    <option value="en-US">English</option>
+    <option value="es-ES">Spanish</option>
+    <option value="fr-FR">French</option>
+    <option value="de-DE">German</option>
+    <option value="hi-IN">Hindi</option>
+    <option value="ar-SA">Arabic</option>
+    <option value="zh-CN">Chinese</option>
+    <option value="it-IT">Italian</option>
+  </select>
+  </div>
+</div>
+
 
       <div className="chat-box">
         {messages.map((message, index) => (
@@ -150,10 +171,8 @@ function BotComponent() {
         ))}
       </div>
 
-      {/* Wave animation */}
-      <div className={`wave-animation ${listening ? "active" : ""}`} />
+      {listening && <Waveform />}
 
-      {/* Voice control buttons */}
       <div className="voice-controls">
         {!listening ? (
           <button onClick={handleStartListening} className="voice-button">
@@ -165,6 +184,8 @@ function BotComponent() {
           </button>
         )}
       </div>
+
+      {loading && <div className="loading">Bot is thinking...</div>}
     </div>
   );
 }
