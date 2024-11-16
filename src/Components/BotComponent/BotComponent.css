@@ -1,121 +1,38 @@
-/* Overall Container */
-.bot-component {
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    background-color: #000; /* Black background */
-    color: #fff; /* White text */
-    padding: 20px;
-    height: 100vh;
-    position: relative;
-  }
-  
-  /* Rotating Circle Animation */
-  .rotating-circle {
-    width: 50px;
+.wave-animation {
+    width: 100%;
     height: 50px;
-    border: 5px solid #007bff;
-    border-top: 5px solid transparent;
-    border-radius: 50%;
-    animation: spin 2s linear infinite;
-    margin-bottom: 20px;
+    background: linear-gradient(90deg, #0af, #0fa, #f0a, #a0f);
+    background-size: 400% 100%;
+    animation: wave 3s infinite linear;
+    opacity: 0;
+    transition: opacity 0.3s;
   }
   
-  @keyframes spin {
+  .wave-animation.active {
+    opacity: 1;
+  }
+  
+  @keyframes wave {
     0% {
-      transform: rotate(0deg);
+      background-position: 0% 50%;
     }
     100% {
-      transform: rotate(360deg);
+      background-position: 100% 50%;
     }
   }
   
-  /* Chat Box */
-  .chat-box {
-    background-color: #1a1a1a; /* Dark gray background for chat box */
-    color: #fff;
-    width: 90%;
-    max-width: 500px;
-    height: 70%;
-    overflow-y: auto;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 20px;
-  }
-  
-  /* Messages */
-  .message {
-    display: flex;
-    flex-direction: column;
-    margin: 10px 0;
-  }
-  
-  .user-message {
-    align-items: flex-end;
-    text-align: right;
-  }
-  
-  .bot-message {
-    align-items: flex-start;
-    text-align: left;
-  }
-  
-  .message-text {
-    background-color: #007bff; /* Blue for user messages */
-    padding: 10px;
-    border-radius: 8px;
-    max-width: 70%;
-    word-wrap: break-word;
-    color: #fff;
-  }
-  
-  .user-message .message-text {
-    background-color: #4caf50; /* Green for bot messages */
-  }
-  
-  .message-timestamp {
-    font-size: 0.75em;
-    color: #aaa;
-    margin-top: 5px;
-  }
-  
-  /* Input Section */
-  .input-section {
-    display: flex;
-    align-items: center;
-    width: 90%;
-    max-width: 500px;
-  }
-  
-  .input-field {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #333;
-    border-radius: 8px;
-    background-color: #1a1a1a;
-    color: #fff;
-    margin-right: 10px;
-  }
-  
-  .input-field::placeholder {
-    color: #aaa;
-  }
-  
-  .send-button {
-    padding: 10px 20px;
+  .voice-button {
     background-color: #007bff;
-    color: white;
+    color: #fff;
     border: none;
-    border-radius: 8px;
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 16px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 1em;
   }
   
-  .send-button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
+  .voice-button:hover {
+    background-color: #0056b3;
   }
   
