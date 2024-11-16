@@ -1,121 +1,172 @@
-/* Overall Container */
-.bot-component {
+/* General Styling */
+body {
+    margin: 0;
     font-family: Arial, sans-serif;
+    background-color: black;
+    color: white;
+}
+
+/* Bot Component Styling */
+.bot-component {
+    width: 100%;
+    max-width: 90%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: black;
+    color: white;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    background-color: #000; /* Black background */
-    color: #fff; /* White text */
+    justify-content: flex-start; /* Align items at the top */
+    height: 90vh;
+}
+
+/* Chat Box Styling */
+.chat-box {
+    background-color: #1e1e1e;
+    border-radius: 10px;
     padding: 20px;
-    height: 100vh;
-    position: relative;
-  }
-  
-  /* Rotating Circle Animation */
-  .rotating-circle {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #007bff;
-    border-top: 5px solid transparent;
-    border-radius: 50%;
-    animation: spin 2s linear infinite;
-    margin-bottom: 20px;
-  }
-  
-  @keyframes spin {
+    width: 100%;
+    max-width: 600px;
+    height: 60vh;
+    overflow-y: auto;
+    margin: auto;
+}
+
+.user-message {
+    text-align: right;
+    color: #00ff00;
+    margin: 10px 0;
+}
+
+.bot-message {
+    text-align: left;
+    color: #ffffff;
+    margin: 10px 0;
+}
+
+.message-text {
+    margin-bottom: 5px;
+}
+
+.message-timestamp {
+    font-size: 0.8em;
+    color: #999;
+}
+
+.loading {
+    text-align: center;
+    font-size: 1.2em;
+    color: #6c63ff;
+    margin-top: 20px;
+}
+
+/* ANNA Title with Animation */
+.anna-title {
+    font-size: 3em;
+    font-weight: bold;
+    color: rgb(59, 6, 6);
+    margin-bottom: 20px; /* Add more space to the bottom */
+    animation: annaGlow 2s infinite ease-in-out;
+}
+
+@keyframes annaGlow {
     0% {
-      transform: rotate(0deg);
+        text-shadow: 0 0 10px #6c63ff, 0 0 20px #e1e1e1, 0 0 30px #6c63ff;
+    }
+    50% {
+        text-shadow: 0 0 20px #ffffff, 0 0 30px #ff6cfb, 0 0 40px #ff6cfb;
     }
     100% {
-      transform: rotate(360deg);
+        text-shadow: 0 0 10px #f2f2f2, 0 0 20px #6c63ff, 0 0 30px #6c63ff;
     }
-  }
-  
-  /* Chat Box */
-  .chat-box {
-    background-color: #1a1a1a; /* Dark gray background for chat box */
-    color: #fff;
-    width: 90%;
-    max-width: 500px;
-    height: 70%;
-    overflow-y: auto;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 10px;
+}
+
+/* Language Selector Container */
+.language-selector {
+    display: flex;
+    flex-direction: column; /* Stack text and dropdown vertically */
+    align-items: center; /* Center align the items */
     margin-bottom: 20px;
-  }
-  
-  /* Messages */
-  .message {
-    display: flex;
-    flex-direction: column;
-    margin: 10px 0;
-  }
-  
-  .user-message {
-    align-items: flex-end;
-    text-align: right;
-  }
-  
-  .bot-message {
-    align-items: flex-start;
-    text-align: left;
-  }
-  
-  .message-text {
-    background-color: #007bff; /* Blue for user messages */
-    padding: 10px;
-    border-radius: 8px;
-    max-width: 70%;
-    word-wrap: break-word;
-    color: #fff;
-  }
-  
-  .user-message .message-text {
-    background-color: #4caf50; /* Green for bot messages */
-  }
-  
-  .message-timestamp {
-    font-size: 0.75em;
-    color: #aaa;
-    margin-top: 5px;
-  }
-  
-  /* Input Section */
-  .input-section {
-    display: flex;
-    align-items: center;
-    width: 90%;
-    max-width: 500px;
-  }
-  
-  .input-field {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #333;
-    border-radius: 8px;
-    background-color: #1a1a1a;
-    color: #fff;
-    margin-right: 10px;
-  }
-  
-  .input-field::placeholder {
-    color: #aaa;
-  }
-  
-  .send-button {
-    padding: 10px 20px;
-    background-color: #007bff;
+    width: 100%;
+}
+
+/* Select Language Text Styling */
+.typing-effect {
+    font-size: 1.5em;
+    font-weight: bold;
     color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
+    margin-bottom: 10px; /* Space between label and dropdown */
+}
+
+/* Dropdown Styling */
+.language-dropdown {
+    padding: 10px 15px;
     font-size: 1em;
-  }
-  
-  .send-button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
-  }
-  
+    font-weight: bold;
+    border: 2px solid #6c63ff;
+    border-radius: 5px;
+    background: black;
+    color: white;
+    outline: none;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    width: 100%; /* Ensure it fills container */
+    max-width: 300px; /* Limit max width */
+}
+
+.language-dropdown:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px #6c63ff;
+}
+
+/* Voice Button Styling */
+.voice-button {
+    background-color: black;
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 15px 30px;
+    border: 2px solid #6c63ff;
+    border-radius: 50px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    z-index: 1;
+    text-transform: uppercase;
+    margin-top: 20px;
+}
+
+.voice-button::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: #6c63ff;
+    transition: all 0.5s ease;
+    z-index: -1;
+    border-radius: 50%;
+    transform: rotate(45deg);
+}
+
+.voice-button:hover::before {
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+}
+
+.voice-button:hover {
+    background-color: #6c63ff;
+    box-shadow: 0 0 20px #6c63ff, 0 0 30px #ff6cfb;
+}
+
+.voice-button:focus {
+    outline: none;
+}
+
+.voice-button:active {
+    transform: scale(0.95);
+}
