@@ -129,6 +129,8 @@ function BotComponent() {
 };
 
 
+
+
 const detectLanguage = (text) => {
   // Simplistic detection logic; Replace with a library or API for better accuracy
   if (/[\u0600-\u06FF]/.test(text)) return "ur-PK"; // Urdu
