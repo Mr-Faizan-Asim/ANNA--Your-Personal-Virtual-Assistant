@@ -1,132 +1,155 @@
-import React, { useState, useEffect } from "react";
-import { GoogleLogin } from "@react-oauth/google";
-import "./GoogleCalendarIntegration.css";
-
-// Define your API key, client ID, and scopes
-const CLIENT_ID =
-  "1003847576572-81o93k5rndnlq8ljcr56vqhv8k639c9h.apps.googleusercontent.com";
-const API_KEY = "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";
-const SCOPES = "https://www.googleapis.com/auth/calendar.events";
+import React, { useState, useEffect, useRef } from 'react';
+import DateTimePicker from 'react-datetime-picker';
+import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react';
+import './GoogleCalendarIntegration.css';
 
 const GoogleCalendarIntegration = () => {
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [authToken, setAuthToken] = useState(null);
+  const [start, setStart] = useState(new Date());
+  const [end, setEnd] = useState(new Date());
+  const [eventName, setEventName] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
+  const [startCalendarOpen, setStartCalendarOpen] = useState(false);
+  const [endCalendarOpen, setEndCalendarOpen] = useState(false);
 
-  // Initialize the Google API client
+  const session = useSession();
+  const supabase = useSupabaseClient();
+
+  // Refs to track the date pickers
+  const startPickerRef = useRef(null);
+  const endPickerRef = useRef(null);
+
+  // Close date picker on outside click
   useEffect(() => {
-    const initializeGoogleClient = async () => {
-      // Load Google Identity Services and API client
-      await window.google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: (response) => {
-          if (response.credential) {
-            setAuthToken(response.credential);
-            setIsSignedIn(true);
-          }
-        },
-      });
-
-      // Load the Google Calendar API client
-      window.gapi.load("client:auth2", () => {
-        window.gapi.client
-          .init({
-            apiKey: API_KEY,
-            clientId: CLIENT_ID,
-            scope: SCOPES,
-          })
-          .then(() => {
-            console.log("Google API client initialized successfully.");
-          })
-          .catch((error) => {
-            console.error("Error initializing Google API client:", error);
-          });
-      });
+    const handleClickOutside = (event) => {
+      if (
+        startPickerRef.current &&
+        !startPickerRef.current.contains(event.target)
+      ) {
+        setStartCalendarOpen(false);
+      }
+      if (
+        endPickerRef.current &&
+        !endPickerRef.current.contains(event.target)
+      ) {
+        setEndCalendarOpen(false);
+      }
     };
 
-    // Call the initialization function
-    if (window.google && window.gapi) {
-      initializeGoogleClient();
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
-  // Handle sign-in success
-  const handleSignInSuccess = (response) => {
-    console.log("Sign-in successful:", response);
-    setAuthToken(response.credential);
-    setIsSignedIn(true);
+  const googleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        scopes: 'https://www.googleapis.com/auth/calendar',
+      },
+    });
+    if (error) {
+      alert('Error logging in to Google provider with Supabase');
+      console.error(error);
+    }
   };
 
-  // Handle sign-out
-  const handleSignOut = () => {
-    setAuthToken(null);
-    setIsSignedIn(false);
-    window.google.accounts.id.disableAutoSelect();
-    console.log("User signed out.");
+  const signOut = async () => {
+    await supabase.auth.signOut();
   };
 
-  const handleAddEvent = () => {
-    console.log("Adding event..."); // Debugging line to ensure function is being called
-
+  const createCalendarEvent = async () => {
     const event = {
-      summary: "New Meeting", // Event Title
-      description: "Discuss project updates", // Event Description
+      summary: eventName,
+      description: eventDescription,
       start: {
-        dateTime: "2024-12-06T08:00:00", // Updated start date and time
-        timeZone: "Asia/Karachi", // Set the time zone
+        dateTime: start.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       end: {
-        dateTime: "2024-12-06T09:00:00", // End time is one hour after the start
-        timeZone: "Asia/Karachi", // Set the time zone
+        dateTime: end.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
     };
 
-    // Check if the Google API client is loaded and initialized
-    if (!window.gapi || !window.gapi.client) {
-      console.error("Google API client is not loaded.");
-      alert("Google API client is not loaded.");
-      return;
-    }
-
-    // Check if the user is signed in
-    if (!authToken || !isSignedIn) {
-      console.error("User is not signed in.");
-      alert("Please sign in first.");
-      return;
-    }
-
-    // Adding event to Google Calendar
-    window.gapi.client
-      .calendar.events.insert({
-        calendarId: "primary",
-        resource: event,
-      })
-      .then((response) => {
-        console.log("Event added:", response);
-        alert("Event added to Google Calendar!");
-      })
-      .catch((error) => {
-        console.error("Error adding event:", error);
-        alert("Failed to add event.");
+    try {
+      const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + session.provider_token,
+        },
+        body: JSON.stringify(event),
       });
+
+      const data = await response.json();
+      alert('Event created successfully: ' + data.summary);
+    } catch (error) {
+      console.error('Error creating event:', error);
+      alert('Error creating event.');
+    }
   };
 
   return (
-    <div className="calendar-container">
-      <h1>Google Calendar Integration</h1>
-      {!isSignedIn ? (
-        <GoogleLogin
-          onSuccess={handleSignInSuccess}
-          onError={(error) => console.error("Login failed:", error)}
-        />
-      ) : (
+    <div className="google-calendar-integration">
+      {session ? (
         <>
-          <button onClick={handleSignOut} className="sign-out-button">
-            Sign Out
-          </button>
-          <button onClick={handleAddEvent} className="add-event-button">
-            Add Event to Calendar
-          </button>
+          <h2>Welcome, {session.user.email}</h2>
+          <div className="datetime-pickers">
+            <div className="datetime-picker" ref={startPickerRef}>
+              <label>Start of your event</label>
+              <DateTimePicker
+                onChange={setStart}
+                value={start}
+                disableClock={true}
+                calendarOpen={startCalendarOpen}
+                onCalendarOpen={() => setStartCalendarOpen(true)}
+                onCalendarClose={() => setStartCalendarOpen(false)}
+                className="date-time-input"
+              />
+            </div>
+            <div className="datetime-picker" ref={endPickerRef}>
+              <label>End of your event</label>
+              <DateTimePicker
+                onChange={setEnd}
+                value={end}
+                disableClock={true}
+                calendarOpen={endCalendarOpen}
+                onCalendarOpen={() => setEndCalendarOpen(true)}
+                onCalendarClose={() => setEndCalendarOpen(false)}
+                className="date-time-input"
+              />
+            </div>
+          </div>
+          <label>Event Name</label>
+          <input
+            type="text"
+            value={eventName}
+            onChange={(e) => setEventName(e.target.value)}
+            placeholder="Enter event name"
+            className="input-box"
+          />
+          <label>Event Description</label>
+          <input
+            type="text"
+            value={eventDescription}
+            onChange={(e) => setEventDescription(e.target.value)}
+            placeholder="Enter event description"
+            className="input-box"
+          />
+          <div className="button-group">
+            <button className="create-event-btn" onClick={createCalendarEvent}>
+              Create Calendar Event
+            </button>
+            <button className="sign-out-btn" onClick={signOut}>
+              Sign Out
+            </button>
+          </div>
         </>
+      ) : (
+        <button className="sign-in-btn" onClick={googleSignIn}>
+          Sign In with Google
+        </button>
       )}
     </div>
   );
