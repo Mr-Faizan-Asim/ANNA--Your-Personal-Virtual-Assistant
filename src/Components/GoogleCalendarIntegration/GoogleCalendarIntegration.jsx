@@ -1,47 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import DateTimePicker from 'react-datetime-picker';
+import React, { useState, useEffect } from 'react';
 import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react';
 import './GoogleCalendarIntegration.css';
 
 const GoogleCalendarIntegration = () => {
-  const [start, setStart] = useState(new Date());
-  const [end, setEnd] = useState(new Date());
+  const [step, setStep] = useState(0);  // Tracks the current step
   const [eventName, setEventName] = useState('');
   const [eventDescription, setEventDescription] = useState('');
-  const [startCalendarOpen, setStartCalendarOpen] = useState(false);
-  const [endCalendarOpen, setEndCalendarOpen] = useState(false);
-
+  const [start, setStart] = useState(new Date());
+  const [end, setEnd] = useState(new Date());
+  const [userResponse, setUserResponse] = useState('');
   const session = useSession();
   const supabase = useSupabaseClient();
 
-  // Refs to track the date pickers
-  const startPickerRef = useRef(null);
-  const endPickerRef = useRef(null);
-
-  // Close date picker on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        startPickerRef.current &&
-        !startPickerRef.current.contains(event.target)
-      ) {
-        setStartCalendarOpen(false);
-      }
-      if (
-        endPickerRef.current &&
-        !endPickerRef.current.contains(event.target)
-      ) {
-        setEndCalendarOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
+  // Google Sign In Function
   const googleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -55,10 +26,27 @@ const GoogleCalendarIntegration = () => {
     }
   };
 
+  // Sign Out Function
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
+  // Move to next step and collect input
+  const handleNextStep = () => {
+    if (step === 0) {
+      setEventName(userResponse);
+    } else if (step === 1) {
+      setEventDescription(userResponse);
+    } else if (step === 2) {
+      setStart(new Date(userResponse)); // Assuming user inputs a valid date string
+    } else if (step === 3) {
+      setEnd(new Date(userResponse)); // Assuming user inputs a valid date string
+    }
+    setUserResponse('');
+    setStep(step + 1);
+  };
+
+  // Create the event in Google Calendar
   const createCalendarEvent = async () => {
     const event = {
       summary: eventName,
@@ -90,61 +78,80 @@ const GoogleCalendarIntegration = () => {
     }
   };
 
+  // Chat UI Flow
+  const renderChat = () => {
+    switch (step) {
+      case 0:
+        return (
+          <div>
+            <p>What is the name of the event?</p>
+            <input
+              type="text"
+              value={userResponse}
+              onChange={(e) => setUserResponse(e.target.value)}
+              placeholder="Enter event name"
+            />
+            <button onClick={handleNextStep}>Next</button>
+          </div>
+        );
+      case 1:
+        return (
+          <div>
+            <p>Great! Now, please provide a description for your event.</p>
+            <input
+              type="text"
+              value={userResponse}
+              onChange={(e) => setUserResponse(e.target.value)}
+              placeholder="Enter event description"
+            />
+            <button onClick={handleNextStep}>Next</button>
+          </div>
+        );
+      case 2:
+        return (
+          <div>
+            <p>When does the event start? Please enter the date and time (e.g., 2024-11-20T09:00).</p>
+            <input
+              type="datetime-local"
+              value={userResponse}
+              onChange={(e) => setUserResponse(e.target.value)}
+            />
+            <button onClick={handleNextStep}>Next</button>
+          </div>
+        );
+      case 3:
+        return (
+          <div>
+            <p>When does the event end? Please enter the date and time (e.g., 2024-11-20T10:00).</p>
+            <input
+              type="datetime-local"
+              value={userResponse}
+              onChange={(e) => setUserResponse(e.target.value)}
+            />
+            <button onClick={handleNextStep}>Next</button>
+          </div>
+        );
+      case 4:
+        return (
+          <div>
+            <p>Thank you! Let's create your event.</p>
+            <button onClick={createCalendarEvent}>Create Event</button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="google-calendar-integration">
       {session ? (
         <>
           <h2>Welcome, {session.user.email}</h2>
-          <div className="datetime-pickers">
-            <div className="datetime-picker" ref={startPickerRef}>
-              <label>Start of your event</label>
-              <DateTimePicker
-                onChange={setStart}
-                value={start}
-                disableClock={true}
-                calendarOpen={startCalendarOpen}
-                onCalendarOpen={() => setStartCalendarOpen(true)}
-                onCalendarClose={() => setStartCalendarOpen(false)}
-                className="date-time-input"
-              />
-            </div>
-            <div className="datetime-picker" ref={endPickerRef}>
-              <label>End of your event</label>
-              <DateTimePicker
-                onChange={setEnd}
-                value={end}
-                disableClock={true}
-                calendarOpen={endCalendarOpen}
-                onCalendarOpen={() => setEndCalendarOpen(true)}
-                onCalendarClose={() => setEndCalendarOpen(false)}
-                className="date-time-input"
-              />
-            </div>
-          </div>
-          <label>Event Name</label>
-          <input
-            type="text"
-            value={eventName}
-            onChange={(e) => setEventName(e.target.value)}
-            placeholder="Enter event name"
-            className="input-box"
-          />
-          <label>Event Description</label>
-          <input
-            type="text"
-            value={eventDescription}
-            onChange={(e) => setEventDescription(e.target.value)}
-            placeholder="Enter event description"
-            className="input-box"
-          />
-          <div className="button-group">
-            <button className="create-event-btn" onClick={createCalendarEvent}>
-              Create Calendar Event
-            </button>
-            <button className="sign-out-btn" onClick={signOut}>
-              Sign Out
-            </button>
-          </div>
+          {renderChat()}
+          <button className="sign-out-btn" onClick={signOut}>
+            Sign Out
+          </button>
         </>
       ) : (
         <button className="sign-in-btn" onClick={googleSignIn}>
