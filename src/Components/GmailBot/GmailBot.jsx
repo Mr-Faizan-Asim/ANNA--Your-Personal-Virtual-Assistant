@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSupabaseClient, useSession } from "@supabase/auth-helpers-react";
+import { he } from "date-fns/locale";
 
 const GmailBot = () => {
   const [emails, setEmails] = useState([]);
@@ -203,63 +204,136 @@ const generateBotResponse = (snippet) => {
   const currentEmail = emails[currentEmailIndex];
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>Gmail Anna</h1>
-      {!session ? (
-        <button
-          onClick={googleSignIn}
-          style={{ padding: "10px 20px", marginTop: "20px" }}
-        >
-          Sign in with Google
-        </button>
-      ) : (
-        <>
-          <button
-            onClick={signOut}
-            style={{ padding: "10px 20px", marginTop: "20px" }}
-          >
-            Sign Out
+    <div style={styles.container}>
+      <div style={styles.content}>
+        <h1 style={styles.title}>Anna</h1>
+        {!session ? (
+          <button onClick={googleSignIn} style={styles.authButton}>
+            Sign in with Google
           </button>
-          <button
-            onClick={fetchEmails}
-            style={{ padding: "10px 20px", margin: "20px 0" }}
-          >
-            Fetch Recent Emails
-          </button>
-          {emails.length > 0 ? (
-            <>
-              <div>
-                <h2>Current Email:</h2>
-                <p>
+        ) : (
+          <>
+            <button onClick={signOut} style={styles.authButton}>
+              Sign Out
+            </button>
+            <button onClick={fetchEmails} style={styles.fetchButton}>
+              Fetch Recent Emails
+            </button>
+            {emails.length > 0 ? (
+              <div style={styles.emailContainer}>
+                <h2 style={{...styles.emailTitle, color:'black'}}>Current Email:</h2>
+                <p style={{ color: 'black' }}>
                   <strong>From:</strong> {currentEmail?.from}
                 </p>
-                <p>
-                  <strong>Subject:</strong> {currentEmail?.subject}
+                <p style={{ color: 'black' }}>
+                  <strong color="black">Subject:</strong> {currentEmail?.subject}
                 </p>
-                <p>
+                <p style={{ color: 'black' }}>
                   <strong>Content:</strong> {currentEmail?.snippet}
                 </p>
+                <button onClick={sendBotReply} style={styles.replyButton}>
+                  Send Anna Reply
+                </button>
+                <button onClick={moveToNextEmail} style={styles.nextButton}>
+                  Next Email
+                </button>
               </div>
-              <button
-                onClick={sendBotReply}
-                style={{ padding: "10px 20px", marginTop: "10px" }}
-              >
-                Send Anna Reply
-              </button>
-              <button
-                onClick={moveToNextEmail}
-                style={{ padding: "10px 20px", marginTop: "10px" }}
-              >
-                Next Email
-              </button>
-            </>
-          ) : (
-            <p>No recent emails found.</p>
-          )}
-        </>
-      )}
+            ) : (
+              <p style={styles.noEmails}>No recent emails found.</p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
+};
+
+const styles = {
+  container: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: "100vh",
+    backgroundColor: "#f9f9f9",
+    padding: "20px",
+    height: "80%",
+  },
+  content: {
+    backgroundColor: "#fff",
+    borderRadius: "8px",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+    padding: "30px",
+    width: "100%",
+    maxWidth: "600px",
+    textAlign: "center",
+  },
+  title: {
+    fontSize: "2rem",
+    color: "#333",
+    marginBottom: "20px",
+  },
+  authButton: {
+    backgroundColor: "#4285F4",
+    color: "#fff",
+    padding: "12px 24px",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    cursor: "pointer",
+    margin: "10px 0",
+    transition: "all 0.3s ease",
+    width: "100%",
+  },
+  fetchButton: {
+    backgroundColor: "#34A853",
+    color: "#fff",
+    padding: "12px 24px",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    cursor: "pointer",
+    margin: "10px 0",
+    transition: "all 0.3s ease",
+    width: "100%",
+  },
+  emailContainer: {
+    marginTop: "20px",
+    textAlign: "left",
+  },
+  emailTitle: {
+    fontSize: "1.5rem",
+    color: "black",
+    marginBottom: "10px",
+  },
+  replyButton: {
+    backgroundColor: "#FBBC05",
+    color: "#fff",
+    padding: "12px 24px",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    cursor: "pointer",
+    margin: "10px 0",
+    transition: "all 0.3s ease",
+    width: "100%",
+  },
+  nextButton: {
+    backgroundColor: "#FF4B4B",
+    color: "#fff",
+    padding: "12px 24px",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    cursor: "pointer",
+    margin: "10px 0",
+    transition: "all 0.3s ease",
+    width: "100%",
+  },
+  noEmails: {
+    color: "#777",
+    fontSize: "1.1rem",
+    marginTop: "20px",
+  },
 };
 
 export default GmailBot;
