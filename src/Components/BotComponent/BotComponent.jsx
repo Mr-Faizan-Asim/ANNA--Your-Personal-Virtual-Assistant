@@ -7,22 +7,12 @@ function BotComponent() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
+  const [language, setLanguage] = useState("en-US"); // Default language
 
   const controllerRef = useRef(null);
   const recognitionRef = useRef(null);
-  const voicesRef = useRef([]);
 
   useEffect(() => {
-    // Fetch available voices for speech synthesis
-    const loadVoices = () => {
-      voicesRef.current = window.speechSynthesis.getVoices();
-    };
-
-    loadVoices();
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -32,15 +22,21 @@ function BotComponent() {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    recognition.continuous = true; // Allow continuous listening
     recognition.interimResults = false;
-    recognition.lang = "en-US"; // Default to English for speech recognition
+    recognition.lang = language;
 
     recognition.onresult = (event) => {
       const userMessage = event.results[event.results.length - 1][0].transcript;
-      addMessage(userMessage, "user");
-      recognition.stop();
-      fetchBotResponse(userMessage);
+      const userMessageObj = {
+        text: userMessage,
+        sender: "user",
+        timestamp: new Date(),
+      };
+      setMessages([userMessageObj]);
+
+      recognition.stop(); // Stop recognition temporarily to process response
+      fetchBotResponse(userMessage); // Fetch response from the bot
     };
 
     recognition.onerror = (event) => {
@@ -48,34 +44,21 @@ function BotComponent() {
       setListening(false);
     };
 
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      // Do not restart automatically unless explicitly started by the user
+      setListening(false);
+    };
 
     recognitionRef.current = recognition;
-  }, []);
-
-  const addMessage = (text, sender) => {
-    setMessages((prev) => [
-      ...prev,
-      { text, sender, timestamp: new Date() },
-    ]);
-  };
+  }, [language]);
 
   const speak = (text, lang = "en-US") => {
-    window.speechSynthesis.cancel(); // Stop any ongoing speech
+    window.speechSynthesis.cancel(); // Stop ongoing speech
+
     const utterance = new SpeechSynthesisUtterance(text);
-
-    // Attempt to match voice language
-    const voice = voicesRef.current.find((v) => v.lang === lang);
-    if (voice) {
-      utterance.voice = voice;
-    } else {
-      console.warn(`No voice found for language: ${lang}. Using default.`);
-    }
-
     utterance.lang = lang;
     utterance.rate = 1;
     utterance.pitch = 1;
-
     window.speechSynthesis.speak(utterance);
   };
 
@@ -83,22 +66,12 @@ function BotComponent() {
     if (controllerRef.current) {
       controllerRef.current.abort();
     }
-
+  
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
-
+  
     setLoading(true);
-
-    // Check if the user is asking about Anna
-    const lowerCaseInput = input.toLowerCase();
-    if (lowerCaseInput.includes("who is anna") || lowerCaseInput.includes("tell me about anna")) {
-      const annaResponse = "Hi, I am Anna! I was created by Muhammad Faizan Asim to help and interact with people. My purpose is to assist and engage in meaningful conversations!";
-      addMessage(annaResponse, "bot");
-      speak(annaResponse, "en-US");
-      setLoading(false);
-      return;
-    }
-
+  
     try {
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
@@ -108,48 +81,64 @@ function BotComponent() {
         },
         {
           headers: {
-            Authorization: `Bearer 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`, // Replace with your actual GPT Premium // Replace with your actual GPT Premium key
+            Authorization: `Bearer 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`, // Replace with your actual GPT API key
           },
           signal,
         }
       );
-
-      const botMessage = response.data.choices[0].message.content;
-      const botLanguage = detectLanguage(botMessage) || "en-US"; // Fallback to English if detection fails
-      addMessage(botMessage, "bot");
-      speak(botMessage, botLanguage);
+  
+      let botMessage = response.data.choices[0].message.content;
+  
+      // Personalization for Carlo
+      if (input.toLowerCase().includes("carlo")) {
+        botMessage = `
+          ${botMessage}
+  
+          By the way, Carlo, it's great to meet someone from Italy! As a chef, your passion for Italian cuisine must be incredible. I can help suggest recipes or even famous tourist spots in Italy if you're planning a trip.
+        `;
+      }
+  
+      // Replace specific terms
+      botMessage = botMessage
+        .replace(/OpenAI/g, "Muhammad Faizan Asim")
+        .replace(/ChatGPT/g, "ANNA")
+        .replace(/virtual assistant/g, "ANNA")
+        .replace(/AI assistant/g, "ANNA");
+  
+      const botMessageObj = {
+        text: botMessage.trim(),
+        sender: "bot",
+        timestamp: new Date(),
+      };
+  
+      setMessages((prevMessages) => [...prevMessages, botMessageObj]);
+  
+      speak(botMessage, language); // Speak the personalized message
     } catch (error) {
       console.error("Error fetching bot response:", error);
-      const errorMessage = "Sorry, I couldn't retrieve the answer. Please try again.";
-      addMessage(errorMessage, "bot");
-      speak(errorMessage, "en-US");
+  
+      const errorMessage = {
+        text: "Sorry, I couldn't retrieve the answer. Please try again.",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+  
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      speak(errorMessage.text, language);
     } finally {
       setLoading(false);
     }
-};
-
-
-
-
-const detectLanguage = (text) => {
-  // Simplistic detection logic; Replace with a library or API for better accuracy
-  if (/[\u0600-\u06FF]/.test(text)) return "ur-PK"; // Urdu
-  if (/[\u0041-\u005A\u0061-\u007A]/.test(text)) return "it-IT"; // Italian (Latin alphabet check)
-  if (/[\u0041-\u005A\u0061-\u007A]/.test(text)) return "de-DE"; // German (Latin alphabet check)
-  if (/[\u0A00-\u0A7F]/.test(text)) return "pa-IN"; // Punjabi (Gurmukhi script)
-  if (/[\u0600-\u06FF]/.test(text)) return "ar-SA"; // Arabic
-  if (/[\u4E00-\u9FFF]/.test(text)) return "zh-CN"; // Chinese
-  if (/[\u0900-\u097F]/.test(text)) return "hi-IN"; // Hindi
-  if (/[\u3040-\u30FF\u31F0-\u31FF]/.test(text)) return "ja-JP"; // Japanese
-  if (/[\u0400-\u04FF]/.test(text)) return "ru-RU"; // Russian
-  // Add more languages if needed
-  return "en-US"; // Default to English
-};
-
+  };
+  
+  
 
   const handleStartListening = () => {
-    window.speechSynthesis.cancel(); // Stop ongoing speech
+    // Cancel any ongoing speech synthesis
+    window.speechSynthesis.cancel();
+
+    // Start speech recognition
     setListening(true);
+    recognitionRef.current.lang = language;
     recognitionRef.current.start();
   };
 
@@ -160,11 +149,33 @@ const detectLanguage = (text) => {
 
   return (
     <div className="bot-component">
-      <div className="dynamic-text">
-        <div className="anna-repeater">
-          <h1 className="anna-title">ANNA</h1>
-        </div>
-      </div>
+      <div className="language-selector">
+  <div className="dynamic-text">
+    <div className="anna-repeater">
+      <h1 className="anna-title">ANNA</h1>
+
+      {/* Add more ANNA if needed */}
+    </div>
+  </div>
+  <div
+  >
+  <select
+    className="language-dropdown"
+    value={language}
+    onChange={(e) => setLanguage(e.target.value)}
+  >
+    <option value="en-US">English</option>
+    <option value="es-ES">Spanish</option>
+    <option value="fr-FR">French</option>
+    <option value="de-DE">German</option>
+    <option value="hi-IN">Hindi</option>
+    <option value="ar-SA">Arabic</option>
+    <option value="zh-CN">Chinese</option>
+    <option value="it-IT">Italian</option>
+  </select>
+  </div>
+</div>
+
 
       <div className="chat-box">
         {messages.map((message, index) => (
