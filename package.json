@@ -10,19 +10,25 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babel/plugin-transform-runtime": "^7.25.9",
+    "@babel/runtime": "^7.26.0",
     "@react-oauth/google": "^0.12.1",
     "@supabase/auth-helpers-react": "^0.5.0",
-    "@supabase/supabase-js": "^2.46.1",
+    "@supabase/supabase-js": "^2.46.2",
     "axios": "^1.7.7",
     "date-fns": "^4.1.0",
+    "dotenv": "^16.4.5",
     "emailjs-com": "^3.2.0",
+    "framer-motion": "^11.12.0",
     "gapi-script": "^1.2.0",
     "googleapis": "^144.0.0",
     "nodemailer": "^6.9.16",
     "react": "^18.3.1",
     "react-datetime-picker": "^6.0.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.0.1"
+    "react-icons": "^5.3.0",
+    "react-router-dom": "^7.0.1",
+    "react-speech-recognition": "^3.10.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
