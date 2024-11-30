@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import "./BotComponent.css";
 
@@ -15,12 +15,7 @@ function BotComponent() {
   const recognitionRef = useRef(null);
   const isSpeakingRef = useRef(false);
   const [voices, setVoices] = useState([]);
-  const [schedulingMeeting, setSchedulingMeeting] = useState(false);
-  const [meetingDetails, setMeetingDetails] = useState({
-    name: "",
-    date: "",
-    time: "",
-  });
+  const [voiceMode, setVoiceMode] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,7 +48,7 @@ function BotComponent() {
 
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript;
-      handleSpeechInput(transcript);
+      handleVoiceInput(transcript);
     };
 
     recognition.onerror = (event) => {
@@ -69,77 +64,36 @@ function BotComponent() {
     recognitionRef.current = recognition;
   }, [listening]);
 
-  const handleSpeechInput = async (input) => {
-    if (schedulingMeeting) {
-      processMeetingDetails(input);
-      return;
-    }
-    if (input.toLowerCase().includes("schedule a meeting")) {
-      setSchedulingMeeting(true);
-      speak("Sure! What is the name of the meeting?");
-      return;
-    }
-    if (input.toLowerCase().includes("list my meetings")) {
-      await listMeetings();
+  const handleVoiceInput = async (input) => {
+    if (isSpeakingRef.current) return;
+    if (input.toLowerCase().includes("date")) {
+      const currentDate = new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const botMessage = { text: `Today is ${currentDate}.`, sender: "bot" };
+      setMessages((prev) => [...prev, botMessage]);
+      speak(botMessage.text);
       return;
     }
 
-    handleSendMessage(input);
+    if (input.toLowerCase().includes("time")) {
+      const currentTime = new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const botMessage = { text: `The current time is ${currentTime}.`, sender: "bot" };
+      setMessages((prev) => [...prev, botMessage]);
+      speak(botMessage.text);
+      return;
+    }
+
+    await handleSendMessage(input, true);
   };
 
-  const processMeetingDetails = async (input) => {
-    if (!meetingDetails.name) {
-      setMeetingDetails((prev) => ({ ...prev, name: input }));
-      speak("Got it. When is the meeting? Please provide the date.");
-      return;
-    }
-    if (!meetingDetails.date) {
-      setMeetingDetails((prev) => ({ ...prev, date: input }));
-      speak("What time is the meeting?");
-      return;
-    }
-    if (!meetingDetails.time) {
-      setMeetingDetails((prev) => ({ ...prev, time: input }));
-      await saveMeeting();
-      setSchedulingMeeting(false);
-      setMeetingDetails({ name: "", date: "", time: "" });
-    }
-  };
-
-  const saveMeeting = async () => {
-    const { name, date, time } = meetingDetails;
-    const { error } = await supabase
-      .from("meetings")
-      .insert([{ name, date, time }]);
-
-    if (error) {
-      console.error("Error saving meeting:", error);
-      speak("I couldn't save the meeting. Please try again.");
-    } else {
-      speak("Your meeting has been scheduled successfully!");
-    }
-  };
-
-  const listMeetings = async () => {
-    const { data, error } = await supabase
-      .from("meetings")
-      .select("*")
-      .order("date", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching meetings:", error);
-      speak("I couldn't fetch your meetings. Please try again.");
-    } else if (data.length === 0) {
-      speak("You don't have any scheduled meetings.");
-    } else {
-      const meetingList = data
-        .map((meeting) => `${meeting.name} on ${meeting.date} at ${meeting.time}`)
-        .join(", ");
-      speak(`Here are your meetings: ${meetingList}`);
-    }
-  };
-
-  const handleSendMessage = async (input) => {
+  const handleSendMessage = async (input, isVoice = false) => {
     const userMessage = { text: input, sender: "user" };
     setMessages((prev) => [...prev, userMessage]);
 
@@ -167,15 +121,17 @@ function BotComponent() {
       const botMessage = { text: botMessageText, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
 
-      stopListening();
-      speak(botMessageText);
+      if (isVoice) {
+        speak(botMessageText);
+      }
     } catch (error) {
       console.error("Error during API call:", error);
       const errorMessage = "Sorry, something went wrong. Please try again.";
       const botMessage = { text: errorMessage, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
-      stopListening();
-      speak(errorMessage);
+      if (isVoice) {
+        speak(errorMessage);
+      }
     }
   };
 
@@ -185,16 +141,20 @@ function BotComponent() {
       return;
     }
 
+    window.speechSynthesis.cancel();
     isSpeakingRef.current = true;
-    stopListening();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
+    utterance.lang = "it-IT";
 
     const selectedVoice =
-      voices.find((voice) => voice.name.includes("Google UK English Female")) ||
+      voices.find((voice) => voice.lang === "it-IT" && voice.name.includes("Female")) ||
+      voices.find((voice) => voice.lang === "it-IT") ||
       voices[0];
-    utterance.voice = selectedVoice;
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
 
     utterance.onerror = (e) => {
       console.error("Speech synthesis error:", e.error);
@@ -202,17 +162,20 @@ function BotComponent() {
 
     utterance.onend = () => {
       isSpeakingRef.current = false;
-      startListening();
+      if (listening) startListening();
     };
 
     window.speechSynthesis.speak(utterance);
   };
 
   const startListening = () => {
-    if (!listening && !isSpeakingRef.current) {
-      setListening(true);
-      recognitionRef.current.start();
+    if (listening || isSpeakingRef.current) {
+      window.speechSynthesis.cancel();
+      isSpeakingRef.current = false;
     }
+
+    setListening(true);
+    recognitionRef.current.start();
   };
 
   const stopListening = () => {
@@ -230,6 +193,11 @@ function BotComponent() {
     }
   };
 
+  const toggleVoiceMode = () => {
+    setVoiceMode((prev) => !prev);
+    stopListening();
+  };
+
   const handleInputSubmit = () => {
     if (userInput.trim()) {
       handleSendMessage(userInput);
@@ -239,53 +207,65 @@ function BotComponent() {
 
   return (
     <div className="bot-container">
-      <div className="circle-container">
-        <div className="foggy-circle">
-          <div className="fog-layer"></div>
-          <div className="fog-layer second"></div>
-        </div>
-      </div>
+      {!voiceMode ? (
 
-      <div className="chat-container">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`chat-message ${
-              message.sender === "user" ? "user-message" : "bot-message"
-            }`}
-          >
-            {message.text}
+      
+        <>
+<div className="circle-container">
+            <div className="foggy-circle">
+              <div className="fog-layer"></div>
+              <div className="fog-layer second"></div>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <div className="footer">
-        <div className="status-container">
-          <span className="status-dot"></span>
-          <span className="status">
-            {listening ? "Listening..." : "Click the mic to start"}
-          </span>
-        </div>
-        <div className="input-container">
-          <input
-            type="text"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            placeholder="Type a quick question..."
-            onKeyDown={(e) => e.key === "Enter" && handleInputSubmit()}
-          />
-          <button className="send-button" onClick={handleInputSubmit}>
-            ➤
-          </button>
+          <div className="chat-container">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`chat-message ${
+                  message.sender === "user" ? "user-message" : "bot-message"
+                }`}
+              >
+                {message.text}
+              </div>
+            ))}
+          </div>
+          <div className="footer">
+            <div className="input-container">
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="Type a quick question..."
+                onKeyDown={(e) => e.key === "Enter" && handleInputSubmit()}
+              />
+              <button className="send-button" onClick={handleInputSubmit}>
+                ➤
+              </button>
+              <button className="mic-button" onClick={toggleVoiceMode}>
+                🎙️ Voice
+              </button>
+              <button className="mic-button" onClick={() => navigate("/annamail")}>
+                AnnaMail
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="voice-interface">
+          <div className="circle-container">
+            <div className="foggy-circle">
+              <div className="fog-layer"></div>
+              <div className="fog-layer second"></div>
+            </div>
+          </div>
           <button className="mic-button" onClick={toggleListening}>
-            {listening ? "Stop" : "Start"}
+            {listening ? "Stop Listening" : "Start Listening"}
           </button>
-           {/* Navigation Button */}
-        <button className="mic-button" onClick={() => navigate("/annamail")}>
-          Go to AnnaMail
-        </button>
+          <button className="mic-button" onClick={toggleVoiceMode}>
+            ❌ Cancel Voice
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
