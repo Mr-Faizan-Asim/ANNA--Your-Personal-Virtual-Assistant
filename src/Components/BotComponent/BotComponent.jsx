@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import "./BotComponent.css";
+import VoiceInterface from "../VoiceInterface/VoiceInterface";
 
 const API_KEY = "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";
 
@@ -251,20 +252,11 @@ function BotComponent() {
           </div>
         </>
       ) : (
-        <div className="voice-interface">
-          <div className="circle-container">
-            <div className="foggy-circle">
-              <div className="fog-layer"></div>
-              <div className="fog-layer second"></div>
-            </div>
-          </div>
-          <button className="mic-button" onClick={toggleListening}>
-            {listening ? "Stop Listening" : "Start Listening"}
-          </button>
-          <button className="mic-button" onClick={toggleVoiceMode}>
-            ❌ Cancel Voice
-          </button>
-        </div>
+        <VoiceInterface
+        listening={listening}
+        toggleListening={toggleListening}
+        toggleVoiceMode={toggleVoiceMode}
+      />
       )}
     </div>
   );
