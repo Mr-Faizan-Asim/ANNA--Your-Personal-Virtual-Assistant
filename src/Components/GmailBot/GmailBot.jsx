@@ -6,7 +6,7 @@ const GmailBot = () => {
   const [emails, setEmails] = useState([]);
   const [processedEmailIds, setProcessedEmailIds] = useState(new Set());
   const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
-  const [loading, setLoading] = useState(true); // Updated: Starts as true to show loading animation
+  const [loading, setLoading] = useState(false); // Default: False until fetching starts
   const session = useSession();
   const supabase = useSupabaseClient();
 
@@ -172,6 +172,20 @@ const GmailBot = () => {
 
   const currentEmail = emails[currentEmailIndex];
 
+  if (!session) {
+    // Display Sign-In Page if User is Not Logged In
+    return (
+      <div className="gmail-container">
+        <div className="sign-in-container">
+          <h1 className="gmail-title">Anna's Gmail Assistant</h1>
+          <button onClick={googleSignIn} className="gmail-button login-button">
+            Sign in with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="gmail-container">
       {loading ? (
@@ -186,47 +200,45 @@ const GmailBot = () => {
       ) : (
         <div className="gmail-content">
           <h1 className="gmail-title">Anna's Gmail Assistant</h1>
-          {!session ? (
-            <button onClick={googleSignIn} className="gmail-button login-button">
-              Sign in with Google
+          <div className="gmail-actions">
+            <button onClick={signOut} className="gmail-button signout-button">
+              Sign Out
             </button>
-          ) : (
-            <>
-              <div className="gmail-actions">
-                <button onClick={signOut} className="gmail-button signout-button">
-                  Sign Out
+            <button onClick={fetchEmails} className="gmail-button fetch-button">
+              Fetch Emails
+            </button>
+          </div>
+          {emails.length > 0 ? (
+            <div className="email-display">
+              <div className="email-details">
+                <h2 className="email-title">Current Email:</h2>
+                <p>
+                  <strong>From:</strong> {currentEmail?.from}
+                </p>
+                <p>
+                  <strong>Subject:</strong> {currentEmail?.subject}
+                </p>
+                <p>
+                  <strong>Content:</strong> {currentEmail?.snippet}
+                </p>
+              </div>
+              <div className="email-actions">
+                <button
+                  className="gmail-button reply-button"
+                  onClick={sendBotReply}
+                >
+                  Send Reply
                 </button>
-                <button onClick={fetchEmails} className="gmail-button fetch-button">
-                  Fetch Emails
+                <button
+                  className="gmail-button next-button"
+                  onClick={moveToNextEmail}
+                >
+                  Next Email
                 </button>
               </div>
-              {emails.length > 0 ? (
-                <div className="email-display">
-                  <div className="email-details">
-                    <h2 className="email-title">Current Email:</h2>
-                    <p>
-                      <strong>From:</strong> {currentEmail?.from}
-                    </p>
-                    <p>
-                      <strong>Subject:</strong> {currentEmail?.subject}
-                    </p>
-                    <p>
-                      <strong>Content:</strong> {currentEmail?.snippet}
-                    </p>
-                  </div>
-                  <div className="email-actions">
-                    <button className="gmail-button reply-button" onClick={sendBotReply}>
-                      Send Reply
-                    </button>
-                    <button className="gmail-button next-button" onClick={moveToNextEmail}>
-                      Next Email
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="no-emails-message">No recent emails found.</p>
-              )}
-            </>
+            </div>
+          ) : (
+            <p className="no-emails-message">No recent emails found.</p>
           )}
         </div>
       )}
