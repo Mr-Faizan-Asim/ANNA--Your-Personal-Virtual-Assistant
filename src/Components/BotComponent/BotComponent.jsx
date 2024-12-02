@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../../supabaseClient";
-import "./BotComponent.css";
 import VoiceInterface from "../VoiceInterface/VoiceInterface";
+import "./BotComponent.css";
 
 const API_KEY = "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";
 
-function BotComponent() {
+const BotComponent = () => {
   const [messages, setMessages] = useState([
     { text: "Hello, I am Anna. How can I assist you today?", sender: "bot" },
   ]);
@@ -15,26 +12,9 @@ function BotComponent() {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
   const isSpeakingRef = useRef(false);
-  const [voices, setVoices] = useState([]);
   const [voiceMode, setVoiceMode] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const populateVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      if (availableVoices.length > 0) {
-        setVoices(availableVoices);
-      } else {
-        setTimeout(populateVoices, 100);
-      }
-    };
-
-    populateVoices();
-
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = populateVoices;
-    }
-
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -66,42 +46,45 @@ function BotComponent() {
   }, [listening]);
 
   const handleVoiceInput = async (input) => {
-    if (isSpeakingRef.current) return;
-    if (input.toLowerCase().includes("date")) {
-      const currentDate = new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-      const botMessage = { text: `Today is ${currentDate}.`, sender: "bot" };
-      setMessages((prev) => [...prev, botMessage]);
-      speak(botMessage.text);
+    const command = input.toLowerCase().trim();
+
+    // Handle "Open Website [url]" commands
+    if (command.startsWith("open website")) {
+      const query = command.replace("open website", "").trim();
+      if (query) {
+        let url = query;
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+          url = `https://www.google.com/search?q=${url}`;
+        }
+        window.open(url, "_blank");
+        const botMessage = { text: `Opening ${url}`, sender: "bot" };
+        setMessages((prev) => [...prev, botMessage]);
+        speak(botMessage.text);
+      } else {
+        const errorMessage = "Please specify a valid website after 'Open Website'.";
+        const botMessage = { text: errorMessage, sender: "bot" };
+        setMessages((prev) => [...prev, botMessage]);
+        speak(errorMessage);
+      }
       return;
     }
 
-    if (input.toLowerCase().includes("time")) {
-      const currentTime = new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      const botMessage = { text: `The current time is ${currentTime}.`, sender: "bot" };
-      setMessages((prev) => [...prev, botMessage]);
-      speak(botMessage.text);
-      return;
-    }
-
-    await handleSendMessage(input, true);
+    // GPT Response
+    await handleSendMessage(input);
   };
 
-  const handleSendMessage = async (input, isVoice = false) => {
+  const handleSendMessage = async (input) => {
     const userMessage = { text: input, sender: "user" };
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const response = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_KEY}`,
+        },
+        body: JSON.stringify({
           model: "gpt-4",
           messages: [
             ...messages.map((msg) => ({
@@ -110,29 +93,20 @@ function BotComponent() {
             })),
             { role: "user", content: input },
           ],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${API_KEY}`,
-          },
-        }
-      );
+        }),
+      });
 
-      const botMessageText = response.data.choices[0].message.content;
+      const data = await response.json();
+      const botMessageText = data.choices[0]?.message?.content || "I'm sorry, I didn't understand that.";
       const botMessage = { text: botMessageText, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
-
-      if (isVoice) {
-        speak(botMessageText);
-      }
+      speak(botMessage.text);
     } catch (error) {
-      console.error("Error during API call:", error);
-      const errorMessage = "Sorry, something went wrong. Please try again.";
+      console.error("Error fetching GPT response:", error);
+      const errorMessage = "Sorry, I couldn't process your request. Please try again.";
       const botMessage = { text: errorMessage, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
-      if (isVoice) {
-        speak(errorMessage);
-      }
+      speak(errorMessage);
     }
   };
 
@@ -146,16 +120,7 @@ function BotComponent() {
     isSpeakingRef.current = true;
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "it-IT";
-
-    const selectedVoice =
-      voices.find((voice) => voice.lang === "it-IT" && voice.name.includes("Female")) ||
-      voices.find((voice) => voice.lang === "it-IT") ||
-      voices[0];
-
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
+    utterance.lang = "en-US";
 
     utterance.onerror = (e) => {
       console.error("Speech synthesis error:", e.error);
@@ -201,7 +166,7 @@ function BotComponent() {
 
   const handleInputSubmit = () => {
     if (userInput.trim()) {
-      handleSendMessage(userInput);
+      handleVoiceInput(userInput);
       setUserInput("");
     }
   };
@@ -209,15 +174,7 @@ function BotComponent() {
   return (
     <div className="bot-container">
       {!voiceMode ? (
-
-      
         <>
-<div className="circle-container">
-            <div className="foggy-circle">
-              <div className="fog-layer"></div>
-              <div className="fog-layer second"></div>
-            </div>
-          </div>
           <div className="chat-container">
             {messages.map((message, index) => (
               <div
@@ -236,30 +193,30 @@ function BotComponent() {
                 type="text"
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
-                placeholder="Type a quick question..."
+                placeholder="Type a question or command..."
                 onKeyDown={(e) => e.key === "Enter" && handleInputSubmit()}
               />
               <button className="send-button" onClick={handleInputSubmit}>
                 ➤
               </button>
-              <button className="mic-button" onClick={toggleVoiceMode}>
-                🎙️ Voice
+              <button className="mic-button" onClick={toggleListening}>
+                🎤
               </button>
-              <button className="mic-button" onClick={() => navigate("/annamail")}>
-                AnnaMail
+              <button className="toggle-button" onClick={toggleVoiceMode}>
+                ❌
               </button>
             </div>
           </div>
         </>
       ) : (
         <VoiceInterface
-        listening={listening}
-        toggleListening={toggleListening}
-        toggleVoiceMode={toggleVoiceMode}
-      />
+          listening={listening}
+          toggleListening={toggleListening}
+          toggleVoiceMode={toggleVoiceMode}
+        />
       )}
     </div>
   );
-}
+};
 
 export default BotComponent;
