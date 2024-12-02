@@ -199,11 +199,8 @@ const BotComponent = () => {
               <button className="send-button" onClick={handleInputSubmit}>
                 ➤
               </button>
-              <button className="mic-button" onClick={toggleListening}>
+              <button className="send-button" onClick={toggleVoiceMode}>
                 🎤
-              </button>
-              <button className="toggle-button" onClick={toggleVoiceMode}>
-                ❌
               </button>
             </div>
           </div>
