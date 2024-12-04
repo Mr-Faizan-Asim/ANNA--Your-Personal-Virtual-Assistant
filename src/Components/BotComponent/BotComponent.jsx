@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom"; 
 import VoiceInterface from "../VoiceInterface/VoiceInterface";
 import "./BotComponent.css";
 
-const API_KEY = "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";
+const API_KEY = "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"; // Replace with your actual API key
 
 const BotComponent = () => {
   const [messages, setMessages] = useState([
@@ -13,8 +14,28 @@ const BotComponent = () => {
   const recognitionRef = useRef(null);
   const isSpeakingRef = useRef(false);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const navigate = useNavigate(); // For navigation
+  const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+  const languageOptions = [
+    { code: "en-US", name: "English (US)" },
+    { code: "it-IT", name: "Italian" },
+    { code: "de-DE", name: "German" },
+    { code: "ru-RU", name: "Russian" },
+  ];
 
   useEffect(() => {
+    // Load available voices
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
+    };
+
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
+
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -23,7 +44,7 @@ const BotComponent = () => {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    recognition.lang = selectedLanguage;
     recognition.continuous = true;
     recognition.interimResults = false;
 
@@ -43,7 +64,7 @@ const BotComponent = () => {
     };
 
     recognitionRef.current = recognition;
-  }, [listening]);
+  }, [listening, selectedLanguage]);
 
   const handleVoiceInput = async (input) => {
     const command = input.toLowerCase().trim();
@@ -54,7 +75,7 @@ const BotComponent = () => {
       if (query) {
         let url = query;
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
-          url = `https://www.google.com/search?q=${url}`;
+          url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
         }
         window.open(url, "_blank");
         const botMessage = { text: `Opening ${url}`, sender: "bot" };
@@ -97,7 +118,12 @@ const BotComponent = () => {
       });
 
       const data = await response.json();
-      const botMessageText = data.choices[0]?.message?.content || "I'm sorry, I didn't understand that.";
+      let botMessageText =
+        data.choices[0]?.message?.content || "I'm sorry, I didn't understand that.";
+
+      // Replace "OpenAI" and "ChatGPT" with "Anna"
+      botMessageText = botMessageText.replace(/openai/gi, "Anna").replace(/chatgpt/gi, "Anna");
+
       const botMessage = { text: botMessageText, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
       speak(botMessage.text);
@@ -115,24 +141,50 @@ const BotComponent = () => {
       console.error("SpeechSynthesis API not supported in this browser.");
       return;
     }
-
+  
     window.speechSynthesis.cancel();
     isSpeakingRef.current = true;
-
+  
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-
+    utterance.lang = selectedLanguage;
+  
+    // Prioritize female voices for the selected language
+    const femaleVoices = voices.filter(
+      (voice) =>
+        voice.lang === selectedLanguage &&
+        (voice.name.toLowerCase().includes("female") ||
+          voice.name.toLowerCase().includes("woman") ||
+          voice.name.toLowerCase().includes("soprano"))
+    );
+  
+    // Select the first available female voice or fallback to any female voice
+    const selectedVoice =
+      femaleVoices.length > 0
+        ? femaleVoices[0]
+        : voices.find((voice) =>
+            voice.name.toLowerCase().includes("female")
+          );
+  
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+    } else {
+      console.warn(`No female voice found. Defaulting to the first available voice.`);
+    }
+  
     utterance.onerror = (e) => {
       console.error("Speech synthesis error:", e.error);
     };
-
+  
     utterance.onend = () => {
       isSpeakingRef.current = false;
       if (listening) startListening();
     };
-
+  
     window.speechSynthesis.speak(utterance);
   };
+  
+  
 
   const startListening = () => {
     if (listening || isSpeakingRef.current) {
@@ -141,6 +193,7 @@ const BotComponent = () => {
     }
 
     setListening(true);
+    recognitionRef.current.lang = selectedLanguage;
     recognitionRef.current.start();
   };
 
@@ -171,11 +224,37 @@ const BotComponent = () => {
     }
   };
 
+  const handleLanguageChange = (e) => {
+    setSelectedLanguage(e.target.value);
+    const languageName = languageOptions.find((lang) => lang.code === e.target.value)?.name;
+    const botMessage = {
+      text: `Language switched to ${languageName}.`,
+      sender: "bot",
+    };
+    setMessages((prev) => [...prev, botMessage]);
+    speak(botMessage.text);
+  };
+
+
+  const navigateToMail = () => {
+    navigate("/annamail");
+  };
+
   return (
     <div className="bot-container">
       {!voiceMode ? (
         <>
           <div className="chat-container">
+          <div className="language-selector">
+        <label htmlFor="language-select">Anna Language: </label>
+        <select id="language-select" value={selectedLanguage} onChange={handleLanguageChange}>
+          {languageOptions.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+      </div>
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -201,6 +280,9 @@ const BotComponent = () => {
               </button>
               <button className="send-button" onClick={toggleVoiceMode}>
                 🎤
+              </button>
+              <button className="mail-button" onClick={navigateToMail}>
+                📧
               </button>
             </div>
           </div>
