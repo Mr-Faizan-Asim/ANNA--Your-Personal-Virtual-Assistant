@@ -112,19 +112,42 @@ const GmailBot = () => {
       return {
         subject: "Your Personal Chef in Rome",
         body: `
-          Enjoy authentic Roman cuisine prepared by your personal chef.
-          A complete Roman meal with antipasto, pasta, main course, and tiramisù awaits you!
+          Although I did not know English well (like most Italians), I made myself understood and appreciated, as you can see from the reviews and I will tell you more I was also included on Tripadvisor among the Best "World" Gastronomic Experiences and I am the fourth in the world.
+
+* ATTENTION: CONTACT ME FIRST ! Especially for special requests.
+
+Seeking the most authentic Roman cuisine?
+
+Want to surprise your significant other or celebrate a special occasion?!
+
+Whether you’d like to help side-by-side prepare the meal with me, your personal chef, or you’d like to walk through the door to find a fully prepared dinner waiting for you, I will be happy to accommodate your request. No matter how small or unequipped the kitchen is at your place!
+
+The experience requires no effort on your part. From shopping to prep to cleaning up afterwards, I’ll take care of everything and will make sure this will be one of the most memorable food experiences during your Roman Holiday.
+
+Savour a traditional 4-course Roman meal prepared by your personal chef. Start the feast with an antipasto, followed by a classic pasta course, and then traditional Roman meat course. End the evening on a sweet note with a traditional crowd pleaser, tiramisù.
+
+The whole meal can be accompanied by an excellent bottle of Italian wine upon request.
+
+Yes ! Vegetarians
+Yes ! Vegans
+Yes ! Celiacs
         `,
       };
     } else if (snippet.toLowerCase().includes("tourist")) {
       return {
         subject: "Bespoke Tourist Experiences in Rome",
         body: `
-          Explore Rome with customized experiences including food tours and personal shopping!
+          I organize bespoke tourist experiences in Rome, designed to offer a unique and personal connection to the Eternal City. My activities include Personal Shopping, Photo Shooting, Video Shooting, Chef at Home services, and immersive Food Tours. Each experience is carefully curated to reflect Rome’s vibrant culture, rich history, and exquisite culinary traditions.
+
+For fashion lovers, my Personal Shopper service takes guests through Rome's best boutiques, hidden artisan shops, and luxury stores, offering a tailored shopping experience. For those who want to capture their Roman adventure, my Photo and Video Shooting services ensure professional-quality memories set against the city’s iconic landmarks.
+
+Food enthusiasts can enjoy my Chef at Home service, where I prepare traditional Roman dishes directly at the comfort of their accommodation, sharing cooking techniques and stories about the recipes. Alternatively, my Food Tours lead guests on a delicious journey through Rome’s best markets, trattorias, and hidden culinary gems.
+
+These experiences are not just about sightseeing; they are about connecting with Rome’s authentic soul. My mission is to ensure that each guest feels like a local, enjoying the city’s treasures in a relaxed, engaging, and unforgettable way.
         `,
       };
     }
-    return { subject: "Thank You", body: "We will get back to you shortly." };
+    return { subject: "Thank You", body: `"Hey, this is Carlo! I'll make sure to get back to you as soon as I can. Thanks for your Message` };
   };
 
   const encodeToBase64 = (str) => {
