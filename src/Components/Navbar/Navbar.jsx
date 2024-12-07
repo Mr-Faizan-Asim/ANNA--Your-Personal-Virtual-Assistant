@@ -8,13 +8,13 @@ const Navbar = () => {
   return (
     <div className="navbar">
       <button className="nav-button" onClick={() => navigate("/calendar")}>
-        🗓️ Meeting
+        Meeting
       </button>
       <button className="nav-button" onClick={() => navigate("/annamail")}>
-        📧 Mail
+        Mail
       </button>
       <button className="nav-button" onClick={() => navigate("/")}>
-        👩 Anna
+        Anna
       </button>
     </div>
   );

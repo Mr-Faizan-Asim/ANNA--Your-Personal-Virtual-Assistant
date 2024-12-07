@@ -6,6 +6,7 @@ const VoiceInterface = ({ listening, toggleListening, toggleVoiceMode }) => {
 
   const handleMicToggle = () => {
     setActive((prev) => !prev);
+    listening = !listening;
     toggleListening(); // Toggles the mic
   };
 
@@ -13,7 +14,6 @@ const VoiceInterface = ({ listening, toggleListening, toggleVoiceMode }) => {
     <div className="voice-interface-container">
       {/* Header */}
       <div className="voice-interface-header">
-        <h1>Anna Carlo Voice Assistant</h1>
         <p>{active ? "Listening..." : "Tap the mic to start listening"}</p>
       </div>
 
@@ -75,7 +75,6 @@ const VoiceInterface = ({ listening, toggleListening, toggleVoiceMode }) => {
 
       {/* Footer */}
       <div className="voice-interface-footer">
-        <h2>AN-NA</h2>
         <button className="mic-button" onClick={handleMicToggle}>
           🎤
         </button>

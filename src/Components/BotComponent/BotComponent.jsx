@@ -11,6 +11,7 @@ const BotComponent = () => {
   ]);
   const [userInput, setUserInput] = useState("");
   const [listening, setListening] = useState(false);
+  const [temp, settemp] = useState(false);
   const recognitionRef = useRef(null);
   const isSpeakingRef = useRef(false);
   const [voiceMode, setVoiceMode] = useState(false);
@@ -18,13 +19,20 @@ const BotComponent = () => {
   const navigate = useNavigate(); // For navigation
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
   const languageOptions = [
-    { code: "en-US", name: "English (US)" },
-    { code: "it-IT", name: "Italian" },
-    { code: "de-DE", name: "German" },
-    { code: "ru-RU", name: "Russian" },
-  ];
+  { code: "en-US", name: "English (US)" },
+  { code: "it-IT", name: "Italian" },
+  { code: "de-DE", name: "German" },
+  { code: "ru-RU", name: "Russian" },
+  { code: "zh-CN", name: "Chinese (Simplified)" }, // Chinese Simplified
+  { code: "zh-TW", name: "Chinese (Traditional)" }, // Chinese Traditional
+  { code: "ar-SA", name: "Arabic" }, // Arabic (Saudi Arabia)a
+  { code: "es-ES", name: "Spanish (Spain)" }, // Spanish (Spain)
+  { code: "es-MX", name: "Spanish (Mexico)" }, // Spanish (Mexico)
+];
+
 
   useEffect(() => {
+    
     // Load available voices
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
@@ -58,17 +66,22 @@ const BotComponent = () => {
     };
 
     recognition.onend = () => {
-      if (listening && !isSpeakingRef.current) {
-        recognition.start();
+      if (listening && recognitionRef.current) {
+        recognitionRef.current.start(); // Restart recognition only if listening
+        
       }
     };
 
-    recognitionRef.current = recognition;
+    if(!temp){
+      recognitionRef.current = recognition;
+      settemp(true);
+    }
+
   }, [listening, selectedLanguage]);
 
   const handleVoiceInput = async (input) => {
     const command = input.toLowerCase().trim();
-
+  
     // Handle "Open Website [url]" commands
     if (command.startsWith("open website")) {
       const query = command.replace("open website", "").trim();
@@ -89,10 +102,21 @@ const BotComponent = () => {
       }
       return;
     }
-
+  
+    // Handle "What's the date" or "What's the time" commands
+    if (command.includes("date") || command.includes("time") || command.includes("today")) {
+      const now = new Date();
+      const currentDateTime = `The current date and time is: ${now.toLocaleString()}`;
+      const botMessage = { text: currentDateTime, sender: "bot" };
+      setMessages((prev) => [...prev, botMessage]);
+      speak(currentDateTime);
+      return;
+    }
+  
     // GPT Response
     await handleSendMessage(input);
   };
+  
 
   const handleSendMessage = async (input) => {
     const userMessage = { text: input, sender: "user" };
@@ -185,32 +209,37 @@ const BotComponent = () => {
   };
   
   
-
-  const startListening = () => {
-    if (listening || isSpeakingRef.current) {
-      window.speechSynthesis.cancel();
-      isSpeakingRef.current = false;
-    }
-
-    setListening(true);
-    recognitionRef.current.lang = selectedLanguage;
-    recognitionRef.current.start();
-  };
-
   const stopListening = () => {
-    if (listening) {
-      setListening(false);
-      recognitionRef.current.stop();
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.onend = null; // Prevent automatic restart
+      recognitionRef.current.stop(); // Stop speech recognition
+      setListening(false); // Update listening state
+      console.log("Stopped listening.");
     }
   };
-
+  
+  const startListening = () => {
+    if (!listening && recognitionRef.current) {
+      recognitionRef.current.lang = selectedLanguage; // Set the language
+      recognitionRef.current.onend = () => {
+        if (listening) {
+          recognitionRef.current.start(); // Restart recognition only if listening
+        }
+      };
+      recognitionRef.current.start(); // Start speech recognition
+      setListening(true); // Update listening state
+      console.log("Started listening.");
+    }
+  };
+  
   const toggleListening = () => {
     if (listening) {
-      stopListening();
+      stopListening(); // Stop listening
     } else {
-      startListening();
+      startListening(); // Start listening
     }
   };
+  
 
   const toggleVoiceMode = () => {
     setVoiceMode((prev) => !prev);
@@ -246,7 +275,6 @@ const BotComponent = () => {
         <>
           <div className="chat-container">
           <div className="language-selector">
-        <label htmlFor="language-select">Anna Language: </label>
         <select id="language-select" value={selectedLanguage} onChange={handleLanguageChange}>
           {languageOptions.map((option) => (
             <option key={option.code} value={option.code}>
@@ -279,7 +307,7 @@ const BotComponent = () => {
                 ➤
               </button>
               <button className="send-button" onClick={toggleVoiceMode}>
-                🎤
+                <img src="/mic.png" alt="Voice Icon" className="send-icon" />
               </button>
               <button className="mail-button" onClick={navigateToMail}>
                 📧
