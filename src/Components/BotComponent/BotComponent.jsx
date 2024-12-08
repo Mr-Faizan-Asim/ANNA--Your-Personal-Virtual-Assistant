@@ -32,7 +32,7 @@ const BotComponent = () => {
 
 
   useEffect(() => {
-    
+    resumeAudioContext();
     // Load available voices
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
@@ -117,7 +117,17 @@ const BotComponent = () => {
     await handleSendMessage(input);
   };
   
-
+  const resumeAudioContext = () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === "suspended") {
+        audioContext.resume().then(() => {
+          console.log("Audio context resumed");
+        });
+      }
+    }
+  };
+  
   const handleSendMessage = async (input) => {
     const userMessage = { text: input, sender: "user" };
     setMessages((prev) => [...prev, userMessage]);
@@ -166,59 +176,50 @@ const BotComponent = () => {
       return;
     }
   
-    // Ensure audio context resumes for iOS
-    if (typeof window !== "undefined" && window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-  
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = selectedLanguage;
   
-    // Wait for voices to load properly
-    const interval = setInterval(() => {
+    const ensureVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
-      if (availableVoices.length > 0) {
-        clearInterval(interval);
   
-        // Prioritize female voices
-        const femaleVoices = availableVoices.filter(
-          (voice) =>
-            voice.lang === selectedLanguage &&
-            (voice.name.toLowerCase().includes("female") ||
-              voice.name.toLowerCase().includes("woman") ||
-              voice.name.toLowerCase().includes("soprano"))
-        );
-  
-        // Select appropriate voice
-        const selectedVoice =
-          femaleVoices.length > 0
-            ? femaleVoices[0]
-            : availableVoices.find((voice) =>
-                voice.name.toLowerCase().includes("female")
-              ) || availableVoices[0]; // Fallback to any voice
-  
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-          console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-        } else {
-          console.warn("No specific voice found. Using default.");
-        }
-  
-        // Bind events
-        utterance.onerror = (e) => {
-          console.error("Speech synthesis error:", e.error);
-        };
-  
-        utterance.onend = () => {
-          isSpeakingRef.current = false;
-          if (listening) startListening();
-        };
-  
-        // Speak
-        window.speechSynthesis.speak(utterance);
+      // Filter for appropriate voices, prioritize female or first available voice
+      const femaleVoices = availableVoices.filter(
+        (voice) =>
+          voice.lang === selectedLanguage &&
+          (voice.name.toLowerCase().includes("female") ||
+            voice.name.toLowerCase().includes("woman"))
+      );
+      const selectedVoice = femaleVoices[0] || availableVoices[0];
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+      } else {
+        console.warn("No specific voice found. Using default.");
       }
-    }, 100);
+  
+      utterance.onerror = (e) => console.error("Speech synthesis error:", e.error);
+      utterance.onend = () => {
+        isSpeakingRef.current = false;
+        if (listening) startListening();
+      };
+  
+      // Speak after ensuring voice is set
+      window.speechSynthesis.speak(utterance);
+    };
+  
+    // Ensure voices are loaded before speaking
+    if (window.speechSynthesis.getVoices().length > 0) {
+      ensureVoices();
+    } else {
+      const voiceLoadInterval = setInterval(() => {
+        if (window.speechSynthesis.getVoices().length > 0) {
+          clearInterval(voiceLoadInterval);
+          ensureVoices();
+        }
+      }, 100);
+    }
   };
+  
   
   
   
