@@ -32,7 +32,7 @@ const BotComponent = () => {
 
 
   useEffect(() => {
-    resumeAudioContext();
+    
     // Load available voices
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
@@ -117,17 +117,7 @@ const BotComponent = () => {
     await handleSendMessage(input);
   };
   
-  const resumeAudioContext = () => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === "suspended") {
-        audioContext.resume().then(() => {
-          console.log("Audio context resumed");
-        });
-      }
-    }
-  };
-  
+
   const handleSendMessage = async (input) => {
     const userMessage = { text: input, sender: "user" };
     setMessages((prev) => [...prev, userMessage]);
@@ -176,51 +166,47 @@ const BotComponent = () => {
       return;
     }
   
+    window.speechSynthesis.cancel();
+    isSpeakingRef.current = true;
+  
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = selectedLanguage;
   
-    const ensureVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
+    // Prioritize female voices for the selected language
+    const femaleVoices = voices.filter(
+      (voice) =>
+        voice.lang === selectedLanguage &&
+        (voice.name.toLowerCase().includes("female") ||
+          voice.name.toLowerCase().includes("woman") ||
+          voice.name.toLowerCase().includes("soprano"))
+    );
   
-      // Filter for appropriate voices, prioritize female or first available voice
-      const femaleVoices = availableVoices.filter(
-        (voice) =>
-          voice.lang === selectedLanguage &&
-          (voice.name.toLowerCase().includes("female") ||
-            voice.name.toLowerCase().includes("woman"))
-      );
-      const selectedVoice = femaleVoices[0] || availableVoices[0];
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-      } else {
-        console.warn("No specific voice found. Using default.");
-      }
+    // Select the first available female voice or fallback to any female voice
+    const selectedVoice =
+      femaleVoices.length > 0
+        ? femaleVoices[0]
+        : voices.find((voice) =>
+            voice.name.toLowerCase().includes("female")
+          );
   
-      utterance.onerror = (e) => console.error("Speech synthesis error:", e.error);
-      utterance.onend = () => {
-        isSpeakingRef.current = false;
-        if (listening) startListening();
-      };
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+    } else {
+      console.warn(`No female voice found. Defaulting to the first available voice.`);
+    }
   
-      // Speak after ensuring voice is set
-      window.speechSynthesis.speak(utterance);
+    utterance.onerror = (e) => {
+      console.error("Speech synthesis error:", e.error);
     };
   
-    // Ensure voices are loaded before speaking
-    if (window.speechSynthesis.getVoices().length > 0) {
-      ensureVoices();
-    } else {
-      const voiceLoadInterval = setInterval(() => {
-        if (window.speechSynthesis.getVoices().length > 0) {
-          clearInterval(voiceLoadInterval);
-          ensureVoices();
-        }
-      }, 100);
-    }
+    utterance.onend = () => {
+      isSpeakingRef.current = false;
+      if (listening) startListening();
+    };
+  
+    window.speechSynthesis.speak(utterance);
   };
-  
-  
   
   
   const stopListening = () => {
