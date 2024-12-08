@@ -2,7 +2,7 @@ import React from 'react';
 
 const SpeakButton = () => {
     const handleSpeak = () => {
-        const text = "Hello Muhammad Faizan Asim"; // The text to be spoken
+        const text = "Hello Carlo"; // The text to be spoken
         const synth = window.speechSynthesis; // Accessing the SpeechSynthesis API
         const utterance = new SpeechSynthesisUtterance(text); // Creating a speech utterance
 
@@ -38,7 +38,7 @@ const SpeakButton = () => {
                     cursor: 'pointer',
                 }}
             >
-                Speak
+                Carlo 
             </button>
         </div>
     );

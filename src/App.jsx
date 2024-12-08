@@ -20,7 +20,7 @@ function App() {
             <Route path="/" element={<BotComponent />} /> {/* Show BotComponent at / */}
             <Route path="/calendar" element={<GoogleCalendarIntegration />} /> {/* Show GoogleCalendarIntegration at /calendar */}
             <Route path="/annamail" element={<GmailBot />} />
-            <Route path="/alarm" element={<AlarmComponent/>} /> {/* Show GmailBot at /annamail */}
+            <Route path="/auth" element={<SpeakButton/>} /> {/* Show GmailBot at /annamail */}
           </Routes>
       </Router>
     </GoogleOAuthProvider>
