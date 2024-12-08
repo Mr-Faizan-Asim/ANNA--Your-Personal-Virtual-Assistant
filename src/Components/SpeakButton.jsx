@@ -2,18 +2,26 @@ import React from 'react';
 
 const SpeakButton = () => {
     const handleSpeak = () => {
-        const text = "Hello Muhammad Faizan Asim";
-        const synth = window.speechSynthesis;
-        const utterance = new SpeechSynthesisUtterance(text);
+        const text = "Hello Muhammad Faizan Asim"; // The text to be spoken
+        const synth = window.speechSynthesis; // Accessing the SpeechSynthesis API
+        const utterance = new SpeechSynthesisUtterance(text); // Creating a speech utterance
 
-        // Select a compatible voice (e.g., Siri on iOS or a fallback)
+        // Load available voices
         const voices = synth.getVoices();
-        const selectedVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Siri')) || voices[0];
-        if (selectedVoice) utterance.voice = selectedVoice;
 
-        // Cancel ongoing speech and speak the text
-        synth.cancel(); // Ensure no interruptions
-        synth.speak(utterance);
+        // Select a woman's voice (preferably in English)
+        const femaleVoice =
+            voices.find(voice => voice.lang.startsWith('en') && voice.gender === 'female') || // Look for a female English voice
+            voices.find(voice => voice.lang.startsWith('en')) || // Fallback to any English voice
+            voices[0]; // Fallback to the first available voice
+
+        if (femaleVoice) {
+            utterance.voice = femaleVoice; // Set the chosen voice
+        }
+
+        // Speak the text
+        synth.cancel(); // Cancel any ongoing speech before starting
+        synth.speak(utterance); // Speak the given utterance
     };
 
     return (
