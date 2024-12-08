@@ -14,14 +14,24 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={CLIENT_ID}>
       <Router>
-      
-        <Navbar />
-          <Routes>
-            <Route path="/" element={<BotComponent />} /> {/* Show BotComponent at / */}
-            <Route path="/calendar" element={<GoogleCalendarIntegration />} /> {/* Show GoogleCalendarIntegration at /calendar */}
-            <Route path="/annamail" element={<GmailBot />} />
-            <Route path="/auth" element={<SpeakButton/>} /> {/* Show GmailBot at /annamail */}
-          </Routes>
+        <Routes>
+          {/* Route for the SpeakButton */}
+          <Route path="/" element={<SpeakButton />} /> {/* Start here */}
+          {/* Routes for the main app */}
+          <Route
+            path="/app"
+            element={
+              <>
+                <Navbar />
+                <Routes>
+                  <Route path="/" element={<BotComponent />} />
+                  <Route path="/calendar" element={<GoogleCalendarIntegration />} />
+                  <Route path="/annamail" element={<GmailBot />} />
+                </Routes>
+              </>
+            }
+          />
+        </Routes>
       </Router>
     </GoogleOAuthProvider>
   );

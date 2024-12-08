@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const SpeakButton = () => {
+    const navigate = useNavigate();
     const handleSpeak = () => {
-        const text = "Hello Carlo"; // The text to be spoken
+        const text = "Welcome Carlo"; // The text to be spoken
         const synth = window.speechSynthesis; // Accessing the SpeechSynthesis API
         const utterance = new SpeechSynthesisUtterance(text); // Creating a speech utterance
 
@@ -22,6 +24,7 @@ const SpeakButton = () => {
         // Speak the text
         synth.cancel(); // Cancel any ongoing speech before starting
         synth.speak(utterance); // Speak the given utterance
+        navigate('/app');
     };
 
     return (
