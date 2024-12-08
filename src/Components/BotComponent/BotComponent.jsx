@@ -30,6 +30,25 @@ const BotComponent = () => {
   { code: "es-MX", name: "Spanish (Mexico)" }, // Spanish (Mexico)
 ];
 
+const fallbackSpeak = async (text) => {
+  try {
+    const response = await fetch("/api/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, language: selectedLanguage }),
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      // Play the audio received from the server (implementation might vary)
+      console.log("Playing audio from server:", data.audioUrl);
+    } else {
+      console.error("Error fetching audio from server:", data.error);
+    }
+  } catch (error) {
+    console.error("Error with fallback speak:", error);
+  }
+};
 
   useEffect(() => {
     
@@ -162,13 +181,15 @@ const BotComponent = () => {
 
   const speak = (text) => {
     if (!window.speechSynthesis) {
-      console.error("SpeechSynthesis API not supported in this browser.");
+      console.error('SpeechSynthesis API not supported in this browser.');
+      // Fallback to server-side text-to-speech for iOS (replace with your implementation)
+      fallbackSpeak(text);
       return;
     }
-    
+  
     window.speechSynthesis.cancel();
     isSpeakingRef.current = true;
-    
+  
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = selectedLanguage;
   
@@ -176,15 +197,14 @@ const BotComponent = () => {
     const femaleVoices = voices.filter(
       (voice) =>
         voice.lang === selectedLanguage &&
-        (voice.name.toLowerCase().includes("female") ||
-          voice.name.toLowerCase().includes("woman") ||
-          voice.name.toLowerCase().includes("soprano"))
+        (voice.name.toLowerCase().includes('female') ||
+          voice.name.toLowerCase().includes('woman') ||
+          voice.name.toLowerCase().includes('soprano'))
     );
   
+    // Select the first available female voice or fallback to any female voice
     const selectedVoice =
-      femaleVoices.length > 0
-        ? femaleVoices[0]
-        : voices.find((voice) => voice.name.toLowerCase().includes("female"));
+      femaleVoices.length > 0 ? femaleVoices[0] : voices.find((voice) => voice.name.toLowerCase().includes('female'));
   
     if (selectedVoice) {
       utterance.voice = selectedVoice;
@@ -194,7 +214,9 @@ const BotComponent = () => {
     }
   
     utterance.onerror = (e) => {
-      console.error("Speech synthesis error:", e.error);
+      console.error('Speech synthesis error:', e.error);
+      // Fallback to server-side text-to-speech for iOS (replace with your implementation)
+      fallbackSpeak(text);
     };
   
     utterance.onend = () => {
@@ -202,11 +224,8 @@ const BotComponent = () => {
       if (listening) startListening();
     };
   
-    // Ensure speech synthesis happens only after user interaction (on iOS)
     window.speechSynthesis.speak(utterance);
   };
-  
-  
   
   const stopListening = () => {
     if (listening && recognitionRef.current) {
