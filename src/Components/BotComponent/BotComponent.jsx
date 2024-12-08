@@ -161,11 +161,51 @@ const BotComponent = () => {
   };
 
   const speak = (text) => {
-    if (window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
+    if (!window.speechSynthesis) {
+      console.error("SpeechSynthesis API not supported in this browser.");
+      return;
     }
+    
+    window.speechSynthesis.cancel();
+    isSpeakingRef.current = true;
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = selectedLanguage;
+  
+    // Prioritize female voices for the selected language
+    const femaleVoices = voices.filter(
+      (voice) =>
+        voice.lang === selectedLanguage &&
+        (voice.name.toLowerCase().includes("female") ||
+          voice.name.toLowerCase().includes("woman") ||
+          voice.name.toLowerCase().includes("soprano"))
+    );
+  
+    const selectedVoice =
+      femaleVoices.length > 0
+        ? femaleVoices[0]
+        : voices.find((voice) => voice.name.toLowerCase().includes("female"));
+  
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+    } else {
+      console.warn(`No female voice found. Defaulting to the first available voice.`);
+    }
+  
+    utterance.onerror = (e) => {
+      console.error("Speech synthesis error:", e.error);
+    };
+  
+    utterance.onend = () => {
+      isSpeakingRef.current = false;
+      if (listening) startListening();
+    };
+  
+    // Ensure speech synthesis happens only after user interaction (on iOS)
+    window.speechSynthesis.speak(utterance);
   };
+  
   
   
   const stopListening = () => {
