@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import VoiceInterface from "../VoiceInterface/VoiceInterface";
 import "./BotComponent.css";
 
-const API_KEY = "YOUR_API_KEY"; // Replace with your actual API key
+const API_KEY = "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"; // Replace with your actual API key
 
 const BotComponent = () => {
   const [messages, setMessages] = useState([
@@ -11,28 +11,29 @@ const BotComponent = () => {
   ]);
   const [userInput, setUserInput] = useState("");
   const [listening, setListening] = useState(false);
-  const [temp, setTemp] = useState(false);
+  const [temp, settemp] = useState(false);
   const recognitionRef = useRef(null);
   const isSpeakingRef = useRef(false);
   const [voiceMode, setVoiceMode] = useState(false);
   const [voices, setVoices] = useState([]);
   const navigate = useNavigate(); // For navigation
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
-  
-  // Define language options for the bot
   const languageOptions = [
-    { code: "en-US", name: "English (US)" },
-    { code: "it-IT", name: "Italian" },
-    { code: "de-DE", name: "German" },
-    { code: "ru-RU", name: "Russian" },
-    { code: "zh-CN", name: "Chinese (Simplified)" },
-    { code: "zh-TW", name: "Chinese (Traditional)" },
-    { code: "ar-SA", name: "Arabic" },
-    { code: "es-ES", name: "Spanish (Spain)" },
-    { code: "es-MX", name: "Spanish (Mexico)" },
-  ];
+  { code: "en-US", name: "English (US)" },
+  { code: "it-IT", name: "Italian" },
+  { code: "de-DE", name: "German" },
+  { code: "ru-RU", name: "Russian" },
+  { code: "zh-CN", name: "Chinese (Simplified)" }, // Chinese Simplified
+  { code: "zh-TW", name: "Chinese (Traditional)" }, // Chinese Traditional
+  { code: "ar-SA", name: "Arabic" }, // Arabic (Saudi Arabia)a
+  { code: "es-ES", name: "Spanish (Spain)" }, // Spanish (Spain)
+  { code: "es-MX", name: "Spanish (Mexico)" }, // Spanish (Mexico)
+];
+
 
   useEffect(() => {
+    
+    // Load available voices
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
       setVoices(availableVoices);
@@ -43,7 +44,8 @@ const BotComponent = () => {
       loadVoices();
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.error("Speech Recognition API not supported in this browser.");
       return;
@@ -66,18 +68,21 @@ const BotComponent = () => {
     recognition.onend = () => {
       if (listening && recognitionRef.current) {
         recognitionRef.current.start(); // Restart recognition only if listening
+        
       }
     };
 
-    if (!temp) {
+    if(!temp){
       recognitionRef.current = recognition;
-      setTemp(true);
+      settemp(true);
     }
+
   }, [listening, selectedLanguage]);
 
   const handleVoiceInput = async (input) => {
     const command = input.toLowerCase().trim();
-
+  
+    // Handle "Open Website [url]" commands
     if (command.startsWith("open website")) {
       const query = command.replace("open website", "").trim();
       if (query) {
@@ -97,7 +102,8 @@ const BotComponent = () => {
       }
       return;
     }
-
+  
+    // Handle "What's the date" or "What's the time" commands
     if (command.includes("date") || command.includes("time") || command.includes("today")) {
       const now = new Date();
       const currentDateTime = `The current date and time is: ${now.toLocaleString()}`;
@@ -106,9 +112,11 @@ const BotComponent = () => {
       speak(currentDateTime);
       return;
     }
-
+  
+    // GPT Response
     await handleSendMessage(input);
   };
+  
 
   const handleSendMessage = async (input) => {
     const userMessage = { text: input, sender: "user" };
@@ -137,6 +145,7 @@ const BotComponent = () => {
       let botMessageText =
         data.choices[0]?.message?.content || "I'm sorry, I didn't understand that.";
 
+      // Replace "OpenAI" and "ChatGPT" with "Anna"
       botMessageText = botMessageText.replace(/openai/gi, "Anna").replace(/chatgpt/gi, "Anna");
 
       const botMessage = { text: botMessageText, sender: "bot" };
@@ -156,13 +165,14 @@ const BotComponent = () => {
       console.error("SpeechSynthesis API not supported in this browser.");
       return;
     }
-
+  
     window.speechSynthesis.cancel();
     isSpeakingRef.current = true;
-
+  
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = selectedLanguage;
-
+  
+    // Prioritize female voices for the selected language
     const femaleVoices = voices.filter(
       (voice) =>
         voice.lang === selectedLanguage &&
@@ -170,96 +180,148 @@ const BotComponent = () => {
           voice.name.toLowerCase().includes("woman") ||
           voice.name.toLowerCase().includes("soprano"))
     );
-
+  
+    // Select the first available female voice or fallback to any female voice
     const selectedVoice =
       femaleVoices.length > 0
         ? femaleVoices[0]
-        : voices.find((voice) => voice.name.toLowerCase().includes("female"));
-
+        : voices.find((voice) =>
+            voice.name.toLowerCase().includes("female")
+          );
+  
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
     } else {
       console.warn(`No female voice found. Defaulting to the first available voice.`);
     }
-
+  
     utterance.onerror = (e) => {
       console.error("Speech synthesis error:", e.error);
     };
-
+  
     utterance.onend = () => {
       isSpeakingRef.current = false;
       if (listening) startListening();
     };
-
-    // Ensure the user interaction before speaking
-    if (typeof window !== "undefined" && window.speechSynthesis.speak) {
-      window.speechSynthesis.speak(utterance);
-    }
+  
+    window.speechSynthesis.speak(utterance);
   };
-
-  const startListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.start();
-      setListening(true);
-    }
-  };
-
+  
+  
   const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setListening(false);
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.onend = null; // Prevent automatic restart
+      recognitionRef.current.stop(); // Stop speech recognition
+      setListening(false); // Update listening state
+      console.log("Stopped listening.");
     }
   };
-
-  const handleVoiceToggle = () => {
-    if (voiceMode) {
-      stopListening();
+  
+  const startListening = () => {
+    if (!listening && recognitionRef.current) {
+      recognitionRef.current.lang = selectedLanguage; // Set the language
+      recognitionRef.current.onend = () => {
+        if (listening) {
+          recognitionRef.current.start(); // Restart recognition only if listening
+        }
+      };
+      recognitionRef.current.start(); // Start speech recognition
+      setListening(true); // Update listening state
+      console.log("Started listening.");
+    }
+  };
+  
+  const toggleListening = () => {
+    if (listening) {
+      stopListening(); // Stop listening
     } else {
-      startListening();
+      startListening(); // Start listening
     }
-    setVoiceMode(!voiceMode);
+  };
+  
+
+  const toggleVoiceMode = () => {
+    setVoiceMode((prev) => !prev);
+    stopListening();
   };
 
-  const handleInputChange = (e) => {
-    setUserInput(e.target.value);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (userInput.trim() !== "") {
-      handleSendMessage(userInput);
+  const handleInputSubmit = () => {
+    if (userInput.trim()) {
+      handleVoiceInput(userInput);
       setUserInput("");
     }
   };
 
+  const handleLanguageChange = (e) => {
+    setSelectedLanguage(e.target.value);
+    const languageName = languageOptions.find((lang) => lang.code === e.target.value)?.name;
+    const botMessage = {
+      text: `Language switched to ${languageName}.`,
+      sender: "bot",
+    };
+    setMessages((prev) => [...prev, botMessage]);
+    speak(botMessage.text);
+  };
+
+
+  const navigateToMail = () => {
+    navigate("/annamail");
+  };
+
   return (
-    <div className="chatbot-container">
-      <div className="chatbot-header">
-        <h2>Anna: Your Assistant</h2>
-        <button onClick={handleVoiceToggle}>
-          {voiceMode ? "Stop Listening" : "Start Listening"}
-        </button>
+    <div className="bot-container">
+      {!voiceMode ? (
+        <>
+          <div className="chat-container">
+          <div className="language-selector">
+        <select id="language-select" value={selectedLanguage} onChange={handleLanguageChange}>
+          {languageOptions.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.name}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="chatbot-messages">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`message ${msg.sender === "bot" ? "bot" : "user"}`}
-          >
-            {msg.text}
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`chat-message ${
+                  message.sender === "user" ? "user-message" : "bot-message"
+                }`}
+              >
+                {message.text}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={userInput}
-          onChange={handleInputChange}
-          placeholder="Ask me anything..."
+          <div className="footer">
+            <div className="input-container">
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="Type a question or command..."
+                onKeyDown={(e) => e.key === "Enter" && handleInputSubmit()}
+              />
+              <button className="send-button" onClick={handleInputSubmit}>
+                ➤
+              </button>
+              <button className="send-button" onClick={toggleVoiceMode}>
+                <img src="/mic.png" alt="Voice Icon" className="send-icon" />
+              </button>
+              <button className="mail-button" onClick={navigateToMail}>
+                📧
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <VoiceInterface
+          listening={listening}
+          toggleListening={toggleListening}
+          toggleVoiceMode={toggleVoiceMode}
         />
-        <button type="submit">Send</button>
-      </form>
+      )}
     </div>
   );
 };
