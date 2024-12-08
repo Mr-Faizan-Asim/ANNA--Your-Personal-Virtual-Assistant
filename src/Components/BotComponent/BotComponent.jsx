@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom"; 
 import VoiceInterface from "../VoiceInterface/VoiceInterface";
-import Tts from 'react-native-tts';
-import Voice from 'react-native-voice';
 import "./BotComponent.css";
 
 const API_KEY = "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"; // Replace with your actual API key
@@ -13,48 +11,112 @@ const BotComponent = () => {
   ]);
   const [userInput, setUserInput] = useState("");
   const [listening, setListening] = useState(false);
+  const [temp, settemp] = useState(false);
+  const recognitionRef = useRef(null);
+  const isSpeakingRef = useRef(false);
   const [voiceMode, setVoiceMode] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+  const [voices, setVoices] = useState([]);
   const navigate = useNavigate(); // For navigation
-
+  const [selectedLanguage, setSelectedLanguage] = useState("en-US");
   const languageOptions = [
-    { code: "en-US", name: "English (US)" },
-    { code: "it-IT", name: "Italian" },
-    { code: "de-DE", name: "German" },
-    { code: "ru-RU", name: "Russian" },
-    { code: "zh-CN", name: "Chinese (Simplified)" }, 
-    { code: "zh-TW", name: "Chinese (Traditional)" }, 
-    { code: "ar-SA", name: "Arabic" },
-    { code: "es-ES", name: "Spanish (Spain)" },
-    { code: "es-MX", name: "Spanish (Mexico)" },
-  ];
+  { code: "en-US", name: "English (US)" },
+  { code: "it-IT", name: "Italian" },
+  { code: "de-DE", name: "German" },
+  { code: "ru-RU", name: "Russian" },
+  { code: "zh-CN", name: "Chinese (Simplified)" }, // Chinese Simplified
+  { code: "zh-TW", name: "Chinese (Traditional)" }, // Chinese Traditional
+  { code: "ar-SA", name: "Arabic" }, // Arabic (Saudi Arabia)a
+  { code: "es-ES", name: "Spanish (Spain)" }, // Spanish (Spain)
+  { code: "es-MX", name: "Spanish (Mexico)" }, // Spanish (Mexico)
+];
+
 
   useEffect(() => {
-    // Initialize TTS with the selected language
-    Tts.setDefaultLanguage(selectedLanguage);
-    Tts.setDefaultVoice('com.apple.speech.synthesis.voice.Alex'); // You can set a specific voice if needed
-
-    // Initialize Voice recognition
-    Voice.onSpeechStart = () => setListening(true);
-    Voice.onSpeechEnd = () => setListening(false);
-    Voice.onSpeechResults = handleVoiceInput;
-
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+    
+    // Load available voices
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
     };
-  }, [selectedLanguage]);
 
-  const handleVoiceInput = (e) => {
-    const transcript = e.value[0];
-    handleVoiceCommand(transcript);
-  };
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
 
-  const handleVoiceCommand = async (input) => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition API not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = selectedLanguage;
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      handleVoiceInput(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+    };
+
+    recognition.onend = () => {
+      if (listening && recognitionRef.current) {
+        recognitionRef.current.start(); // Restart recognition only if listening
+        
+      }
+    };
+
+    if(!temp){
+      recognitionRef.current = recognition;
+      settemp(true);
+    }
+
+  }, [listening, selectedLanguage]);
+
+  const handleVoiceInput = async (input) => {
     const command = input.toLowerCase().trim();
-    // Handle commands as before...
-    // You can add any voice-based commands here (e.g., open website, time, etc.)
+  
+    // Handle "Open Website [url]" commands
+    if (command.startsWith("open website")) {
+      const query = command.replace("open website", "").trim();
+      if (query) {
+        let url = query;
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+          url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
+        }
+        window.open(url, "_blank");
+        const botMessage = { text: `Opening ${url}`, sender: "bot" };
+        setMessages((prev) => [...prev, botMessage]);
+        speak(botMessage.text);
+      } else {
+        const errorMessage = "Please specify a valid website after 'Open Website'.";
+        const botMessage = { text: errorMessage, sender: "bot" };
+        setMessages((prev) => [...prev, botMessage]);
+        speak(errorMessage);
+      }
+      return;
+    }
+  
+    // Handle "What's the date" or "What's the time" commands
+    if (command.includes("date") || command.includes("time") || command.includes("today")) {
+      const now = new Date();
+      const currentDateTime = `The current date and time is: ${now.toLocaleString()}`;
+      const botMessage = { text: currentDateTime, sender: "bot" };
+      setMessages((prev) => [...prev, botMessage]);
+      speak(currentDateTime);
+      return;
+    }
+  
+    // GPT Response
     await handleSendMessage(input);
   };
+  
 
   const handleSendMessage = async (input) => {
     const userMessage = { text: input, sender: "user" };
@@ -82,6 +144,8 @@ const BotComponent = () => {
       const data = await response.json();
       let botMessageText =
         data.choices[0]?.message?.content || "I'm sorry, I didn't understand that.";
+
+      // Replace "OpenAI" and "ChatGPT" with "Anna"
       botMessageText = botMessageText.replace(/openai/gi, "Anna").replace(/chatgpt/gi, "Anna");
 
       const botMessage = { text: botMessageText, sender: "bot" };
@@ -97,24 +161,59 @@ const BotComponent = () => {
   };
 
   const speak = (text) => {
-    Tts.speak(text);
-  };
-
-  const toggleListening = () => {
-    if (listening) {
-      Voice.stop();
-    } else {
-      Voice.start();
+    if (window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
     }
   };
+  
+  
+  const stopListening = () => {
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.onend = null; // Prevent automatic restart
+      recognitionRef.current.stop(); // Stop speech recognition
+      setListening(false); // Update listening state
+      console.log("Stopped listening.");
+    }
+  };
+  
+  const startListening = () => {
+    if (!listening && recognitionRef.current) {
+      recognitionRef.current.lang = selectedLanguage; // Set the language
+      recognitionRef.current.onend = () => {
+        if (listening) {
+          recognitionRef.current.start(); // Restart recognition only if listening
+        }
+      };
+      recognitionRef.current.start(); // Start speech recognition
+      setListening(true); // Update listening state
+      console.log("Started listening.");
+    }
+  };
+  
+  const toggleListening = () => {
+    if (listening) {
+      stopListening(); // Stop listening
+    } else {
+      startListening(); // Start listening
+    }
+  };
+  
 
   const toggleVoiceMode = () => {
     setVoiceMode((prev) => !prev);
+    stopListening();
+  };
+
+  const handleInputSubmit = () => {
+    if (userInput.trim()) {
+      handleVoiceInput(userInput);
+      setUserInput("");
+    }
   };
 
   const handleLanguageChange = (e) => {
     setSelectedLanguage(e.target.value);
-    Tts.setDefaultLanguage(e.target.value);
     const languageName = languageOptions.find((lang) => lang.code === e.target.value)?.name;
     const botMessage = {
       text: `Language switched to ${languageName}.`,
@@ -123,6 +222,7 @@ const BotComponent = () => {
     setMessages((prev) => [...prev, botMessage]);
     speak(botMessage.text);
   };
+
 
   const navigateToMail = () => {
     navigate("/annamail");
@@ -133,19 +233,21 @@ const BotComponent = () => {
       {!voiceMode ? (
         <>
           <div className="chat-container">
-            <div className="language-selector">
-              <select id="language-select" value={selectedLanguage} onChange={handleLanguageChange}>
-                {languageOptions.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="language-selector">
+        <select id="language-select" value={selectedLanguage} onChange={handleLanguageChange}>
+          {languageOptions.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+      </div>
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`chat-message ${message.sender === "user" ? "user-message" : "bot-message"}`}
+                className={`chat-message ${
+                  message.sender === "user" ? "user-message" : "bot-message"
+                }`}
               >
                 {message.text}
               </div>
@@ -158,9 +260,9 @@ const BotComponent = () => {
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 placeholder="Type a question or command..."
-                onKeyDown={(e) => e.key === "Enter" && handleSendMessage(userInput)}
+                onKeyDown={(e) => e.key === "Enter" && handleInputSubmit()}
               />
-              <button className="send-button" onClick={() => handleSendMessage(userInput)}>
+              <button className="send-button" onClick={handleInputSubmit}>
                 ➤
               </button>
               <button className="send-button" onClick={toggleVoiceMode}>
