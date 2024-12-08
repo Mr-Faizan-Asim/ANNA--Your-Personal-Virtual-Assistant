@@ -1,0 +1,32 @@
+.sound-wave-container {
+    width: 100%;
+    height: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .sound-waves {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .wave {
+    animation: waveAnimation 5s infinite;
+    opacity: 0.8;
+    transition: stroke 0.3s ease;
+  }
+  
+  .wave.active {
+    animation: waveAnimation 2s infinite ease-in-out;
+    opacity: 1;
+  }
+  
+  @keyframes waveAnimation {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+  

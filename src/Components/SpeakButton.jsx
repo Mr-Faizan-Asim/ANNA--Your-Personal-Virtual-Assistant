@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import './SpeakButton.css';
 
 const SpeakButton = () => {
     const navigate = useNavigate();
