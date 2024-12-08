@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import './SpeakButton.css';
 
 const SpeakButton = () => {
     const navigate = useNavigate();
     const handleSpeak = () => {
-        const text = "Welcome Carlo"; // The text to be spoken
+        const text = "Hello, I am Anna. How can I assist you today?"; // The text to be spoken
         const synth = window.speechSynthesis; // Accessing the SpeechSynthesis API
         const utterance = new SpeechSynthesisUtterance(text); // Creating a speech utterance
 
@@ -24,11 +25,13 @@ const SpeakButton = () => {
         // Speak the text
         synth.cancel(); // Cancel any ongoing speech before starting
         synth.speak(utterance); // Speak the given utterance
-        navigate('/app');
+        navigate('/anna');
     };
 
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            
+            
             <button
                 onClick={handleSpeak}
                 style={{
@@ -41,7 +44,7 @@ const SpeakButton = () => {
                     cursor: 'pointer',
                 }}
             >
-                Carlo 
+                Welocme Sir
             </button>
         </div>
     );

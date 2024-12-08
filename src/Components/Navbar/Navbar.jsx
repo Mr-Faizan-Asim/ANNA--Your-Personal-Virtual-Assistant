@@ -13,8 +13,11 @@ const Navbar = () => {
       <button className="nav-button" onClick={() => navigate("/annamail")}>
         Mail
       </button>
-      <button className="nav-button" onClick={() => navigate("/")}>
+      <button className="nav-button" onClick={() => navigate("/anna")}>
         Anna
+      </button>
+      <button className="nav-button" onClick={() => navigate("/")}>
+        Auth
       </button>
     </div>
   );
