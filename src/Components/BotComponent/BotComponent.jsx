@@ -173,13 +173,17 @@ const BotComponent = () => {
     utterance.lang = selectedLanguage;
   
     // Prioritize female voices for the selected language
-    const femaleVoices = voices.filter(
-      (voice) =>
-        voice.lang === selectedLanguage &&
-        (voice.name.toLowerCase().includes("female") ||
-          voice.name.toLowerCase().includes("woman") ||
-          voice.name.toLowerCase().includes("soprano"))
-    );
+    const voices = synth.getVoices();
+
+        // Select a woman's voice (preferably in English)
+        const femaleVoice =
+            voices.find(voice => voice.lang.startsWith('en') && voice.gender === 'female') || // Look for a female English voice
+            voices.find(voice => voice.lang.startsWith('en')) || // Fallback to any English voice
+            voices[0]; // Fallback to the first available voice
+
+        if (femaleVoice) {
+            utterance.voice = femaleVoice; // Set the chosen voice
+        }
   
     // Select the first available female voice or fallback to any female voice
     const selectedVoice =
@@ -189,12 +193,6 @@ const BotComponent = () => {
             voice.name.toLowerCase().includes("female")
           );
   
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-      console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-    } else {
-      console.warn(`No female voice found. Defaulting to the first available voice.`);
-    }
   
     utterance.onerror = (e) => {
       console.error("Speech synthesis error:", e.error);
