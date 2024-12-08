@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import VoiceInterface from "../VoiceInterface/VoiceInterface";
 import "./BotComponent.css";
 
-const API_KEY = "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"; // Replace with your actual API key
+const API_KEY = "YOUR_API_KEY"; // Replace with your actual API key
 
 const BotComponent = () => {
   const [messages, setMessages] = useState([
@@ -11,27 +11,28 @@ const BotComponent = () => {
   ]);
   const [userInput, setUserInput] = useState("");
   const [listening, setListening] = useState(false);
-  const [temp, settemp] = useState(false);
+  const [temp, setTemp] = useState(false);
   const recognitionRef = useRef(null);
   const isSpeakingRef = useRef(false);
   const [voiceMode, setVoiceMode] = useState(false);
   const [voices, setVoices] = useState([]);
   const navigate = useNavigate(); // For navigation
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+  
+  // Define language options for the bot
   const languageOptions = [
     { code: "en-US", name: "English (US)" },
     { code: "it-IT", name: "Italian" },
     { code: "de-DE", name: "German" },
     { code: "ru-RU", name: "Russian" },
-    { code: "zh-CN", name: "Chinese (Simplified)" }, // Chinese Simplified
-    { code: "zh-TW", name: "Chinese (Traditional)" }, // Chinese Traditional
-    { code: "ar-SA", name: "Arabic" }, // Arabic (Saudi Arabia)a
-    { code: "es-ES", name: "Spanish (Spain)" }, // Spanish (Spain)
-    { code: "es-MX", name: "Spanish (Mexico)" }, // Spanish (Mexico)
+    { code: "zh-CN", name: "Chinese (Simplified)" },
+    { code: "zh-TW", name: "Chinese (Traditional)" },
+    { code: "ar-SA", name: "Arabic" },
+    { code: "es-ES", name: "Spanish (Spain)" },
+    { code: "es-MX", name: "Spanish (Mexico)" },
   ];
 
   useEffect(() => {
-    // Load available voices
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
       setVoices(availableVoices);
@@ -42,8 +43,7 @@ const BotComponent = () => {
       loadVoices();
     }
 
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.error("Speech Recognition API not supported in this browser.");
       return;
@@ -71,7 +71,7 @@ const BotComponent = () => {
 
     if (!temp) {
       recognitionRef.current = recognition;
-      settemp(true);
+      setTemp(true);
     }
   }, [listening, selectedLanguage]);
 
@@ -233,38 +233,33 @@ const BotComponent = () => {
     }
   };
 
-  const handleLanguageChange = (e) => {
-    setSelectedLanguage(e.target.value);
-  };
-
   return (
-    <div className="bot-container">
-      <div className="chat-box">
+    <div className="chatbot-container">
+      <div className="chatbot-header">
+        <h2>Anna: Your Assistant</h2>
+        <button onClick={handleVoiceToggle}>
+          {voiceMode ? "Stop Listening" : "Start Listening"}
+        </button>
+      </div>
+      <div className="chatbot-messages">
         {messages.map((msg, index) => (
-          <div key={index} className={`message ${msg.sender}`}>
+          <div
+            key={index}
+            className={`message ${msg.sender === "bot" ? "bot" : "user"}`}
+          >
             {msg.text}
           </div>
         ))}
       </div>
-      <div className="controls">
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={userInput}
-            onChange={handleInputChange}
-            placeholder="Ask me anything..."
-          />
-          <button type="submit">Send</button>
-        </form>
-        <button onClick={handleVoiceToggle}>
-          {voiceMode ? "Stop Listening" : "Start Listening"}
-        </button>
-        <VoiceInterface
-          voices={voices}
-          selectedLanguage={selectedLanguage}
-          onLanguageChange={handleLanguageChange}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={userInput}
+          onChange={handleInputChange}
+          placeholder="Ask me anything..."
         />
-      </div>
+        <button type="submit">Send</button>
+      </form>
     </div>
   );
 };
