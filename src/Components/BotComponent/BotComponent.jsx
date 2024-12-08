@@ -179,53 +179,26 @@ const fallbackSpeak = async (text) => {
     }
   };
 
-  const speak = (text) => {
-    if (!window.speechSynthesis) {
-      console.error('SpeechSynthesis API not supported in this browser.');
-      // Fallback to server-side text-to-speech for iOS (replace with your implementation)
-      fallbackSpeak(text);
-      return;
-    }
-  
-    window.speechSynthesis.cancel();
-    isSpeakingRef.current = true;
-  
+  function speak(text) {
+    if (!text) return;
+
+    // Initialize the speech synthesis instance
+    const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = selectedLanguage;
-  
-    // Prioritize female voices for the selected language
-    const femaleVoices = voices.filter(
-      (voice) =>
-        voice.lang === selectedLanguage &&
-        (voice.name.toLowerCase().includes('female') ||
-          voice.name.toLowerCase().includes('woman') ||
-          voice.name.toLowerCase().includes('soprano'))
-    );
-  
-    // Select the first available female voice or fallback to any female voice
-    const selectedVoice =
-      femaleVoices.length > 0 ? femaleVoices[0] : voices.find((voice) => voice.name.toLowerCase().includes('female'));
-  
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-      console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-    } else {
-      console.warn(`No female voice found. Defaulting to the first available voice.`);
+
+    // Check and select an iOS-compatible voice
+    const voices = synth.getVoices();
+    const iosVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Siri')) || voices[0];
+    utterance.voice = iosVoice;
+
+    // Ensure proper iOS handling
+    if (synth.speaking) {
+        synth.cancel(); // Cancel any ongoing speech
     }
-  
-    utterance.onerror = (e) => {
-      console.error('Speech synthesis error:', e.error);
-      // Fallback to server-side text-to-speech for iOS (replace with your implementation)
-      fallbackSpeak(text);
-    };
-  
-    utterance.onend = () => {
-      isSpeakingRef.current = false;
-      if (listening) startListening();
-    };
-  
-    window.speechSynthesis.speak(utterance);
-  };
+
+    // Speak only after ensuring the voices are loaded
+    synth.speak(utterance);
+}
   
   const stopListening = () => {
     if (listening && recognitionRef.current) {
