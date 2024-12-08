@@ -17,7 +17,7 @@ function App() {
       
         <Navbar />
           <Routes>
-            <Route path="/" element={<SpeakButton />} /> {/* Show BotComponent at / */}
+            <Route path="/" element={<BotComponent />} /> {/* Show BotComponent at / */}
             <Route path="/calendar" element={<GoogleCalendarIntegration />} /> {/* Show GoogleCalendarIntegration at /calendar */}
             <Route path="/annamail" element={<GmailBot />} />
             <Route path="/alarm" element={<AlarmComponent/>} /> {/* Show GmailBot at /annamail */}
