@@ -160,19 +160,34 @@ const BotComponent = () => {
     }
   };
 
-  const speak = (text) => {
+  const speak = (text, selectedLanguage = "en-US") => {
     if (!window.speechSynthesis) {
       console.error("SpeechSynthesis API not supported in this browser.");
       return;
     }
   
+    // Ensure voices are loaded before using them
+    let voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      // If voices are not loaded, wait until the 'voiceschanged' event is fired
+      window.speechSynthesis.onvoiceschanged = () => {
+        voices = window.speechSynthesis.getVoices();
+        speakWithVoice(text, voices, selectedLanguage);
+      };
+    } else {
+      // If voices are already loaded, call the function immediately
+      speakWithVoice(text, voices, selectedLanguage);
+    }
+  };
+  
+  const speakWithVoice = (text, voices, selectedLanguage) => {
+    // Cancel any ongoing speech before starting
     window.speechSynthesis.cancel();
-    isSpeakingRef.current = true;
   
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = selectedLanguage;
   
-    // Prioritize female voices for the selected language
+    // Filter voices based on language and name heuristics for female voices
     const femaleVoices = voices.filter(
       (voice) =>
         voice.lang === selectedLanguage &&
@@ -181,30 +196,30 @@ const BotComponent = () => {
           voice.name.toLowerCase().includes("soprano"))
     );
   
-    // Select the first available female voice or fallback to any female voice
-    const selectedVoice =
-      femaleVoices.length > 0
-        ? femaleVoices[0]
-        : voices.find((voice) =>
-            voice.name.toLowerCase().includes("female")
-          );
+    // Select the first suitable female voice, or fallback to any matching language voice
+    const selectedVoice = 
+      femaleVoices.length > 0 
+        ? femaleVoices[0] 
+        : voices.find((voice) => voice.lang === selectedLanguage);
   
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
     } else {
-      console.warn(`No female voice found. Defaulting to the first available voice.`);
+      console.warn("No suitable female voice found. Using default voice.");
     }
   
+    // Handle errors during speech synthesis
     utterance.onerror = (e) => {
       console.error("Speech synthesis error:", e.error);
     };
   
+    // Log when speech ends
     utterance.onend = () => {
-      isSpeakingRef.current = false;
-      if (listening) startListening();
+      console.log("Speech synthesis finished.");
     };
   
+    // Start speaking
     window.speechSynthesis.speak(utterance);
   };
   
