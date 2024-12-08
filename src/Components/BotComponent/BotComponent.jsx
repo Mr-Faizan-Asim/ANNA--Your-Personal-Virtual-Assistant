@@ -31,53 +31,76 @@ const BotComponent = () => {
 ];
 
 
-  useEffect(() => {
-    
-    // Load available voices
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
+useEffect(() => {
+  // Function to load available voices for speech synthesis
+  const loadVoices = () => {
+    const availableVoices = window.speechSynthesis.getVoices();
+    if (availableVoices.length) {
       setVoices(availableVoices);
-    };
-
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-      loadVoices();
+    } else {
+      // Retry loading voices for browsers like Safari
+      setTimeout(() => loadVoices(), 100);
     }
+  };
 
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.error("Speech Recognition API not supported in this browser.");
-      return;
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices; // Update voices when they change
+  }
+
+  // Check for Speech Recognition API
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    console.error("Speech Recognition API not supported in this browser.");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = selectedLanguage;
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  // Handle speech recognition results
+  recognition.onresult = (event) => {
+    const transcript = event.results[event.results.length - 1][0].transcript;
+    handleVoiceInput(transcript);
+  };
+
+  // Handle errors during speech recognition
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+  };
+
+  // Restart speech recognition if listening is active
+  recognition.onend = () => {
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.start();
     }
+  };
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = selectedLanguage;
-    recognition.continuous = true;
-    recognition.interimResults = false;
+  // Ensure recognition is initialized only once
+  if (!recognitionRef.current) {
+    recognitionRef.current = recognition;
+  }
 
-    recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
-      handleVoiceInput(transcript);
-    };
+  // Start or stop recognition based on `listening` state
+  if (listening) {
+    recognitionRef.current.start();
+  } else {
+    recognitionRef.current.stop();
+  }
 
-    recognition.onerror = (event) => {
-      console.error("Speech recognition error:", event.error);
-    };
-
-    recognition.onend = () => {
-      if (listening && recognitionRef.current) {
-        recognitionRef.current.start(); // Restart recognition only if listening
-        
-      }
-    };
-
-    if(!temp){
-      recognitionRef.current = recognition;
-      settemp(true);
+  return () => {
+    // Cleanup: Stop recognition and reset event listeners
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onerror = null;
     }
+  };
+}, [listening, selectedLanguage]);
 
-  }, [listening, selectedLanguage]);
 
   const handleVoiceInput = async (input) => {
     const command = input.toLowerCase().trim();
@@ -161,18 +184,18 @@ const BotComponent = () => {
   };
 
   const speak = (text) => {
-    if (!window.speechSynthesis) {
-      console.error("SpeechSynthesis API not supported in this browser.");
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      console.error("SpeechSynthesis API is not supported in this browser.");
       return;
     }
   
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // Cancel any ongoing speech
     isSpeakingRef.current = true;
   
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = selectedLanguage;
   
-    // Prioritize female voices for the selected language
+    // Filter for female voices (if available)
     const femaleVoices = voices.filter(
       (voice) =>
         voice.lang === selectedLanguage &&
@@ -181,32 +204,30 @@ const BotComponent = () => {
           voice.name.toLowerCase().includes("soprano"))
     );
   
-    // Select the first available female voice or fallback to any female voice
-    const selectedVoice =
-      femaleVoices.length > 0
-        ? femaleVoices[0]
-        : voices.find((voice) =>
-            voice.name.toLowerCase().includes("female")
-          );
+    const selectedVoice = femaleVoices.length
+      ? femaleVoices[0]
+      : voices.find((voice) => voice.lang === selectedLanguage);
   
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
     } else {
-      console.warn(`No female voice found. Defaulting to the first available voice.`);
+      console.warn("No matching voice found, using default voice.");
     }
   
-    utterance.onerror = (e) => {
-      console.error("Speech synthesis error:", e.error);
-    };
-  
+    // Event handlers
+    utterance.onerror = (e) => console.error("Speech synthesis error:", e.error);
     utterance.onend = () => {
       isSpeakingRef.current = false;
       if (listening) startListening();
     };
   
-    window.speechSynthesis.speak(utterance);
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error("Error with speech synthesis:", error);
+    }
   };
+  
   
   
   const stopListening = () => {
