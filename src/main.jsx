@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import App from './App';
 import "regenerator-runtime/runtime";
 import { supabase } from './supabaseClient';

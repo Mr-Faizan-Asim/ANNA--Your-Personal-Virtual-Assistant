@@ -1,0 +1,135 @@
+/* PricePlan.css */
+.pricing-container {
+    text-align: center; /* Align content to the left */
+    color: #fff;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #f0f0f1, #000000);
+    background-size: 200% 200%;
+    animation: gradientAnimation 5s ease infinite; /* Animation for gradient background */
+    overflow: hidden;
+    width: 100%;
+}
+
+@keyframes gradientAnimation {
+    0% {
+        background-position: 0% 0%;
+    }
+    50% {
+        background-position: 100% 100%;
+    }
+    100% {
+        background-position: 0% 0%;
+    }
+}
+
+.pricing-title {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    margin-left: 20px; /* Add left margin for better alignment */
+}
+
+.pricing-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    margin-left: 20px; /* Add left margin for better alignment */
+}
+
+.plans {
+    display: flex;
+    justify-content: center; /* Align plans to the left */
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+    padding-left: 20px; /* Ensure some space from the left */
+}
+
+.plan-card {
+    background: #1e1e2f;
+    border-radius: 15px;
+    padding: 20px;
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease-in-out;
+}
+
+.plan-card:hover {
+    transform: translateY(-10px); /* Slight hover effect */
+}
+
+.highlighted {
+    background: linear-gradient(to bottom, #ff7e5f, #feb47b);
+    color: #000;
+}
+
+.plan-title {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.plan-badge {
+    font-size: 0.9rem;
+    background: #ffd700;
+    color: #000;
+    padding: 5px 10px;
+    border-radius: 12px;
+    margin-left: 10px;
+}
+
+.plan-price {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.plan-features li {
+    font-size: 1rem;
+    margin: 5px 0;
+}
+
+.plan-button {
+    background: transparent;
+    color: #fff;
+    border: 2px solid #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+}
+
+.plan-button:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* Add media query for responsiveness */
+@media (max-width: 768px) {
+    .pricing-container {
+        padding: 30px 10px; /* Adjust padding for smaller screens */
+    }
+
+    .plans {
+        justify-content: center; /* Center plans on smaller screens */
+    }
+
+    .plan-card {
+        max-width: 100%; /* Allow the plan cards to take full width */
+    }
+
+    .pricing-title {
+        font-size: 2rem;
+    }
+
+    .pricing-subtitle {
+        font-size: 1rem;
+    }
+}
