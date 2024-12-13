@@ -42,9 +42,15 @@ body {
 }
 
 .price-comp {
-    min-height: 40vh;  /* Adjust PriceComp height */
+    min-height: 80vh;  /* Adjust PriceComp height */
     padding: 20px;
-    background: #2c2c3c;
+    background: transparent;
+}
+
+.waitlist {
+    min-height: 80vh;  /* Adjust PriceComp height */
+    padding: 80px;
+    background: transparent;
 }
 
 h1, h2, p {
