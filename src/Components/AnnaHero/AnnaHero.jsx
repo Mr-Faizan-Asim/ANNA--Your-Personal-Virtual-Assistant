@@ -30,9 +30,9 @@ const AnnaHero = () => {
                 />
             </div>
             <div className="hero">
-            <h1 className="glowing-header">ANNA.AI</h1>
+            <h1 className="glowing-header">Matrix.AI</h1>
             <p className="pulsing-slogan">
-            Anna.ai – Your Intelligent Companion for a Smarter Tomorrow
+            Matrix.ai – Your Intelligent Companion.
             </p>
             <button
                 className={`cta-button ${buttonClicked ? "clicked" : ""}`}
