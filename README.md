@@ -1,7 +1,7 @@
 # Anna - Your Personal Virtual Assistant 🤖
 
 
-Anna is a highly interactive Virtual Assistant designed to make your life easier. Whether you want to schedule meetings, send automated emails based on incoming emails, or simply have a friendly chat, Anna is here to help. The project leverages advanced GPT capabilities and integrates with Supabase for efficient data handling.
+Anna is a highly interactive Virtual Assistant designed to make your life easier. Whether you want to schedule meetings, send automated emails based on incoming emails, or simply have a friendly chat, Anna is here to help. 
 
 ---
 
