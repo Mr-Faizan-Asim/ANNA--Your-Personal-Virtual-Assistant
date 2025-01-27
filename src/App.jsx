@@ -8,7 +8,7 @@ import AlarmComponent from './Components/Alarm/AlarmComponent';
 import Navbar from './Components/Navbar/Navbar';
 import SpeakButton from './Components/SpeakButton';
 
-const CLIENT_ID = "1003847576572-81o93k5rndnlq8ljcr56vqhv8k639c9h.apps.googleusercontent.com";
+const CLIENT_ID = "";
 
 function App() {
   return (
