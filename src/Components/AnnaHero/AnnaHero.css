@@ -1,0 +1,119 @@
+/* AnnaHero.css */
+.hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    background: transparent;
+    color: #fff;
+    text-align: center;
+    padding: 10px; /* Ensure padding on smaller screens */
+}
+
+.logo {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    cursor: pointer;
+    border: transparent;
+    padding-bottom: 80px;
+}
+
+.logo img {
+    width: 80px;
+    height: auto;
+    padding-bottom: 80px;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+
+h1 {
+    font-size: 6rem;
+    font-weight: bold;
+    letter-spacing: 5px;
+    margin-bottom: 20px;
+}
+
+.glowing-header {
+    animation: glow 2s infinite alternate;
+    padding-top: 150px; /* Adjusted for better positioning */
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px #8e2de2, 0 0 20px #4a00e0;
+    }
+    to {
+        text-shadow: 0 0 20px #d9a7c7, 0 0 30px #1e0a3c;
+    }
+}
+
+.pulsing-slogan {
+    font-size: 1.5rem;
+    margin-bottom: 40px;
+    animation: pulse 3s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.cta-button {
+    padding: 15px 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #f8f8ff;
+    text-transform: uppercase;
+    border: 3px solid;
+    border-radius: 100px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.cta-button.clicked {
+    animation: pulse-border 1s linear infinite;
+}
+
+@keyframes pulse-border {
+    0% {
+        box-shadow: 0 0 10px red, 0 0 20px purple;
+    }
+    100% {
+        box-shadow: 0 0 20px black, 0 0 30px white;
+    }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 4rem;
+    }
+
+    .cta-button {
+        padding: 12px 25px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 3rem;
+    }
+
+    .cta-button {
+        padding: 10px 20px;
+        font-size: 0.8rem;
+    }
+}
