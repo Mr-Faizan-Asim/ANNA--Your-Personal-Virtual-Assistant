@@ -1,8 +1,60 @@
-# React + Vite
+# Anna - Your Personal Virtual Assistant 🤖
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Anna - Your Virtual Assistant](your-image-url)
 
-Currently, two official plugins are available:
+Anna is a highly interactive Virtual Assistant designed to make your life easier. Whether you want to schedule meetings, send automated emails based on incoming emails, or simply have a friendly chat, Anna is here to help. The project leverages advanced GPT capabilities and integrates with Supabase for efficient data handling.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
+
+## 🌟 Features
+
+1. **Email Automation**  
+   Automatically sends emails in response to received messages. Perfect for handling repetitive communication tasks.
+
+2. **Meeting Scheduler**  
+   Schedules meetings seamlessly and updates your calendar.
+
+3. **Conversational Assistant**  
+   Engages in human-like conversations to answer queries, provide information, or just chat.
+
+4. **Customizable for Your Needs**  
+   Fully customizable by adding your GPT API key and Supabase details.
+
+---
+
+## 🛠️ Setup Guide
+
+Follow these steps to get Anna up and running:
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/anna-virtual-assistant.git
+cd anna-virtual-assistant
+```
+
+### 2. Add Your OpenAI GPT API Key & Supabase Details
+
+---
+
+## 🌟 How to Use
+
+1. **Configure Settings**  
+2. **Interact with Anna**  
+3. **Scheduling Meetings**  
+
+---
+
+## 🛡️ License
+This project is licensed under the MIT License. Feel free to use, modify, and distribute the code.
+
+---
+
+## 📧 Support
+
+If you have any questions or need help setting up Anna, feel free to reach out:
+**mr.faizan.asim@gmail.com**
+
+---
+
+## 📌 Disclaimer
+Anna requires you to set up your own API keys and Supabase details for proper functioning. Make sure these credentials are kept secure.
