@@ -5,7 +5,7 @@ Anna is a highly interactive Virtual Assistant designed to make your life easier
 
 ---
 
-## 🌟 Features
+## 🌟 Features:
 
 1. **Email Automation**  
    Automatically sends emails in response to received messages. Perfect for handling repetitive communication tasks.
