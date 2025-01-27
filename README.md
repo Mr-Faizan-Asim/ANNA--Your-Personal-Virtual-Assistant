@@ -27,8 +27,8 @@ Follow these steps to get Anna up and running:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/anna-virtual-assistant.git
-cd anna-virtual-assistant
+git clone https://github.com/Mr-Faizan-Asim/ANNA--Your-Personal-Virtual-Assistant
+cd ANNA--Your-Personal-Virtual-Assistant
 ```
 
 ### 2. Add Your OpenAI GPT API Key & Supabase Details
